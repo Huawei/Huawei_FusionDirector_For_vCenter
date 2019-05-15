@@ -1,0 +1,28 @@
+var i18n_v_en = {
+	menu_FD: "FusionDirector",
+	menu_vCenter_set: "Setting",
+	menu_vCenter_ha_set: "HA And Alarm Setting",
+	menu_server: "Server",
+	menu_server_list: "Server List",
+	menu_configuration: 'Configuration',
+	menu_profile: 'Configuration',
+	menu_deployment: 'Deployment',
+	menu_osImage: 'OS Image',
+	menu_osDeploy: 'OS Deployment',
+	menu_task: 'Task',
+	menu_upgrade:'Firmware Update',
+	menu_versionWarehouse:'Version Repository',
+	menu_upgradePackage:'Upgrade Package',
+	menu_batchUpgrade:'Batch Upgrade',
+	menu_upgradePlan:'Update Schedule',
+	menu_DeviceVersionInfo:'Device Version Information',
+	menu_server_sourceManage: "Software Source Management",
+	menu_server_moduleManage: "Template Management",
+	menu_server_moduleManage_task: "Task Management",
+	menu_server_firmware_upload: "Firmware Upload",
+	menu_server_firmware_upgrade: "Firmware Upgrade",
+	menu_about: "About",
+	menu_setting:'Setting',
+	menu_vCenter:'vCenter'
+
+}

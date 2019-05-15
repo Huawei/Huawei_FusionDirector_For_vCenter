@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>自定义基线</title>
+    <link href="../../css/element.css" rel="stylesheet" />
+    <link href="../../css/style.css" rel="stylesheet" />
+    <script src="../../scripts/vue.js"></script>
+    <script src="../../scripts/element.js"></script>
+    <script src="../../scripts/jquery-3.2.1.min.js"></script>
+    <script src="../../scripts/i18n/zh-CN.js"></script>
+    <script src="../../scripts/i18n/en.js"></script>
+    <script src="../i18n/en.js"></script>
+    <script src="../i18n/zh-CN.js"></script>
+    <script src="../../scripts/polyfill.min.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../../scripts/web-platform.js"></script>
+    <script src="../js/errorCode.js"></script>
+    <script src="../../scripts/lodash.min.js"></script>
+    <script src="../../scripts/Chart.bundle.min.js"></script>
+    <script src="js/rest.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        body {
+            min-width: 900px;
+        }
+
+        .deployContent {
+            padding: 20px;
+        }
+
+        .optionGroup {
+            float: right;
+            position: relative;
+        }
+
+        .infoTitle {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .deployinfo {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .deployinfo tr td {
+            height: 30px;
+            padding-left: 5px;
+        }
+
+        .dashBorder {
+            width: 100%;
+            height: 1px;
+            border-bottom: #dddddd 1px dashed;
+            margin-bottom: 25px;
+            margin-top: 25px;
+        }
+
+        .deployContent .el-select {
+            width: 420px;
+        }
+
+        .deployContent .el-input,
+        .el-textarea__inner {
+            width: 420px;
+        }
+
+        .deployContent .el-upload-list {
+            width: 420px;
+        }
+
+        .packageSearch {
+            margin-bottom: 10px;
+        }
+
+        .desLength {
+            position: absolute;
+            bottom: 0px;
+            left: 360px;
+            color: #999;
+            width: 50px;
+            text-align: right;
+        }
+
+        /* 部署的下拉搜索框 */
+        .input-with-select {
+            display: inline-block;
+            position: relative;
+            vertical-align: middle;
+        }
+
+        .input-with-select .el-select {
+            width: auto;
+        }
+
+        .input-with-select .el-select .el-input {
+            width: 130px;
+        }
+
+        .productType .el-form-item__label:before {
+            content: '*';
+            color: #f56c6c;
+            margin-right: 3px;
+        }
+
+        .add_table_header .el-checkbox__inner {
+            display: none;
+        }
+
+        .packageSearch .el-select-multiple {
+            min-width: 410px;
+        }
+
+        .el-dialog {
+            min-width: 830px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <el-row v-loading.fullscreen.lock="fullscreenLoading " :element-loading-text="i18ns.common.loading">
+            <div class="deployContent">
+                <div>
+                    <span class="infoTitle">{{i18ns.OSDeploy.deploy_basicInfo}}</span>
+                    <el-row>
+                        <el-form label-position="left" :model="creatForm" :rules="rules" ref="creatForm"
+                            label-width="250px" label-suffix=":">
+                            <div class="com-border-bottom">
+                                <el-form-item label="Fusion Director " prop="FDIp">
+                                    <el-select v-model="FDIp" @change="commandClick" :disabled="true">
+                                        <el-option v-for="item in FDs" :key="item.name" :label="item.label"
+                                            :value="item.name"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item :label="i18ns.upgradePackageWarehouse.versionWarehouse_baselineName"
+                                    prop="Name">
+                                    <el-input :placeholder="i18ns.common.pleaseInput" v-model="creatForm.Name"
+                                        class="input-with-select"></el-input>
+                                </el-form-item>
+                                <el-form-item :label="i18ns.upgradePackageWarehouse.versionWarehouse_description"
+                                    prop="Description">
+                                    <el-input :rows="5" type="textarea" v-model="creatForm.Description" maxlength="256"
+                                        :placeholder="i18ns.upgradePackageWarehouse.versionWarehouse_descriptionRange">
+                                    </el-input>
+                                    <span class="desLength"> <span>{{creatForm.Description.length}}</span>/256</span>
+                                </el-form-item>
+                            </div>
+                            <el-row>
+                                <h2>{{i18ns.upgradePackageWarehouse.versionWarehouse_versionMessage}}</h2>
+                            </el-row>
+                            <el-form-item :label="i18ns.upgradePackageWarehouse.versionWarehouse_selectVersion"
+                                prop="ProductType" class="productType">
+                                <el-button size="medium" @click="importBaseline">
+                                    {{i18ns.upgradePackageWarehouse.versionWarehouse_importExitBaseline}}</el-button>
+                                <el-button size="medium" @click="addUpgradePackage">
+                                    {{i18ns.upgradePackageWarehouse.versionWarehouse_addUpgradePackage}}</el-button>
+                                <el-button size="medium" @click="deleteAll" :disabled="versionList.length<=0">
+                                    {{i18ns.upgradePackageWarehouse.versionWarehouse_deleteAll}}</el-button>
+                            </el-form-item>
+                            <el-form-item :label="i18ns.upgradePackageWarehouse.versionWarehouse_baselineVersionMessage"
+                                prop="">
+                                <el-table :data="versionList" border header-row-class-name="my_table_header"
+                                    ref="versionListTable">
+                                    <el-table-column prop="PackageName"
+                                        :label="i18ns.upgradePackageWarehouse.versionWarehouse_upgradeName"
+                                        min-width="120" :show-overflow-tooltip="true"></el-table-column>
+                                    <el-table-column prop="SupportModel"
+                                        :label="i18ns.upgradePackageWarehouse.versionWarehouse_productType">
+                                    </el-table-column>
+                                    <el-table-column prop="Version"
+                                        :label="i18ns.upgradePackageWarehouse.versionWarehouse_version">
+                                        <template slot-scope="scope">
+                                            <p v-for="vis in scope.row.Version">
+                                                <span>{{vis.Module}}：</span>{{vis.CurrentVer}}</p>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="Size"
+                                        :label="i18ns.upgradePackageWarehouse.versionWarehouse_size">
+                                        <template slot-scope="scope">
+                                            {{unitFun(scope.row.Size)}}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column :label="i18ns.common.operation">
+                                        <template slot-scope="scope">
+                                            <el-button type="text" size="small"
+                                                @click="deleteOne(scope.row,scope.$index)">{{i18ns.common.delete}}
+                                            </el-button>
+                                            <el-button type="text" size="small"
+                                                @click="replaceOne(scope.row,scope.$index)">
+                                                {{i18ns.upgradePackageWarehouse.versionWarehouse_replacement}}
+                                            </el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                                <p style="text-align:right;" v-if="versionList.length>0">
+                                    {{i18ns.common.common_totalNumber}}{{versionList.length}}</p>
+                            </el-form-item>
+                        </el-form>
+                    </el-row>
+                </div>
+            </div>
+        </el-row>
+        <!-- 导入基线 -->
+        <el-dialog :close-on-click-modal="false"
+            :title="i18ns.upgradePackageWarehouse.versionWarehouse_importExitBaseline" :visible.sync="Baselineisible"
+            width="80%" :close-on-click-modal="false">
+            <el-table v-bind:data="baseLinelistData" border style="width:100%;" :empty-text="emptyText"
+                :element-loading-text="i18ns.common.loading" header-row-class-name="my_table_header"
+                @current-change="handleradioChange">
+                <el-table-column type="expand">
+                    <template slot-scope="props">
+                        <el-table :data="props.row.FirmwarePackages" style="width: 100%;"
+                            header-row-class-name="my_table_header">
+                            <el-table-column prop="PackageName"
+                                :label="i18ns.upgradePackageWarehouse.versionWarehouse_upgradeName"
+                                :show-overflow-tooltip="true"></el-table-column>
+                            <el-table-column prop="SupportModel"
+                                :label="i18ns.upgradePackageWarehouse.versionWarehouse_productType"></el-table-column>
+                            <el-table-column prop="Version"
+                                :label="i18ns.upgradePackageWarehouse.versionWarehouse_version">
+                                <template slot-scope="scope">
+                                    <p v-for="vis in scope.row.Version"><span>{{vis.Module}}：</span>{{vis.CurrentVer}}
+                                    </p>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="Size" :label="i18ns.upgradePackageWarehouse.versionWarehouse_size">
+                                <template slot-scope="scope">
+                                    {{unitFun(scope.row.Size)}}
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </template>
+                </el-table-column>
+                <el-table-column label="" width="70" center>
+                    <template slot-scope="scope">
+                        <el-radio class="radio" v-model="baselineRadio" :label="scope.row.UUID">&nbsp;</el-radio>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="Name" :label="i18ns.upgradePackageWarehouse.versionWarehouse_baselineName">
+                </el-table-column>
+                <el-table-column prop="Status" :label="i18ns.upgradePackageWarehouse.versionWarehouse_usedState"
+                    sortable>
+                    <template slot-scope="scope">
+                        <span
+                            v-if="scope.row.Status=='Unused'">{{i18ns.upgradePackageWarehouse.versionWarehouse_notUsed}}</span>
+                        <span
+                            v-else-if="scope.row.Status=='Using'">{{i18ns.upgradePackageWarehouse.versionWarehouse_using}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="Version" :label="i18ns.upgradePackageWarehouse.versionWarehouse_version">
+                </el-table-column>
+            </el-table>
+            <el-row class="pagination-row">
+                <el-col v-bind:span="24" style="text-align:left;">
+                    <el-pagination @size-change="pageInfo2HandleSizeChange"
+                        @current-change="pageInfo2HandleCurrentChange" v-bind:current-page="pageInfo2.currentPage"
+                        v-bind:page-sizes="pageInfo2.pageSizes" v-bind:page-size="pageInfo2.pageSize"
+                        layout="total, sizes, prev, pager, next, jumper,slot" v-bind:total="pageInfo2.total">
+                        <el-button style="border: 1px solid #c4c4c4;margin-left: 10px;">{{i18ns.common.confirm}}
+                        </el-button>
+                    </el-pagination>
+                </el-col>
+            </el-row>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="Baselineisible=false">{{i18ns.common.cancel}}</el-button>
+                <el-button @click="inportSubmit" v-loading.fullscreen.lock="fullscreenLoading"
+                    :element-loading-text="i18ns.common.loading" :disabled="checkdBaseline.length<=0" type="primary">
+                    {{i18ns.common.confirm}}</el-button>
+            </div>
+        </el-dialog>
+        <!-- 添加服务包 -->
+        <el-dialog :close-on-click-modal="false"
+            :title="i18ns.upgradePackageWarehouse.versionWarehouse_addUpgradePackage"
+            :visible.sync="UpgradePackageisible" width="80%" :close-on-click-modal="false">
+            <el-row class="packageSearch">
+                <el-col :span="16">
+                    <span>{{i18ns.upgradePackageWarehouse.versionWarehouse_firmwareType}}：</span>
+                    <el-select v-model="FirmwareType" :placeholder="i18ns.common.pleaseSelect" multiple
+                        @change="FirmwareTypeChange" class="el-select-multiple">
+                        <el-option v-for="(item,i) in FirmwareTypeOptions" :key="i" :label="item.Module"
+                            :value="item.Module">
+                        </el-option>
+                    </el-select>
+                </el-col>
+                <el-col :span="8" class="input-with-select">
+                    <el-input :placeholder="i18ns.OSDeploy.deploy_pleaseInputKeywords" disabled clearable>
+                        <el-select v-model="packageValue" slot="prepend" disabled>
+                            <el-option :label="i18ns.upgradePackageWarehouse.versionWarehouse_upgradeName" value="1">
+                            </el-option>
+                        </el-select>
+                        <el-button slot="append" icon="el-icon-search" disabled></el-button>
+                    </el-input>
+                </el-col>
+            </el-row>
+            <el-table ref="addpackage" :data="UpgradePackage" border style="width: 100%;"
+                header-row-class-name="add_table_header" :empty-text="emptyText"
+                @selection-change="packageSelectionChange" row-key="UUID">
+                <el-table-column type="selection" width="55" :selectable='checkboxT' :reserve-selection="true">
+                </el-table-column>
+                <el-table-column prop="PackageName" :label="i18ns.upgradePackageWarehouse.versionWarehouse_upgradeName"
+                    :show-overflow-tooltip="true"></el-table-column>
+                <el-table-column prop="Type" :label="i18ns.upgradePackageWarehouse.versionWarehouse_type">
+                    <template slot-scope="scope">
+                        <span
+                            v-if="scope.row.Type=='Package_Firmware'">{{i18ns.upgradePackageWarehouse.versionWarehouse_packageFirmware}}</span>
+                        <span
+                            v-else-if="scope.row.Type=='Package_Software'">{{i18ns.upgradePackageWarehouse.versionWarehouse_packageSoftware}}</span>
+                        <span
+                            v-else-if="scope.row.Type=='Bundle_Driver'">{{i18ns.upgradePackageWarehouse.versionWarehouse_packageDirve}}</span>
+                        <span
+                            v-else-if="scope.row.Type=='Bundle_Firmware'">{{i18ns.upgradePackageWarehouse.versionWarehouse_bundleFirmware}}</span>
+                        <span
+                            v-else-if="scope.row.Type=='Bundle_Software'">{{i18ns.upgradePackageWarehouse.versionWarehouse_bundleSoftware}}</span>
+                        <span
+                            v-else-if="scope.row.Type=='Board_Firmware'">{{i18ns.upgradePackageWarehouse.versionWarehouse_boardPackage}}</span>
+                        <span
+                            v-else-if="scope.row.Type=='Package_Driver'">{{i18ns.upgradePackageWarehouse.versionWarehouse_packageDirve}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="SupportModel"
+                    :label="i18ns.upgradePackageWarehouse.versionWarehouse_productType"></el-table-column>
+                <el-table-column prop="Version" :label="i18ns.upgradePackageWarehouse.versionWarehouse_version">
+                    <template slot-scope="scope">
+                        <p v-for="vis in scope.row.Version"><span>{{vis.Module}}：</span>{{vis.CurrentVer}}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="Size" :label="i18ns.upgradePackageWarehouse.versionWarehouse_size">
+                    <template slot-scope="scope">
+                        {{unitFun(scope.row.Size)}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="CreationTime" :label="i18ns.upgradePackageWarehouse.versionWarehouse_time"
+                    sortable></el-table-column>
+            </el-table>
+            <el-row class="pagination-row">
+                <el-col v-bind:span="24" style="text-align:left;">
+                    <el-pagination @size-change="pageInfo1HandleSizeChange"
+                        @current-change="pageInfo1HandleCurrentChange" v-bind:current-page="pageInfo1.currentPage"
+                        v-bind:page-sizes="pageInfo1.pageSizes" v-bind:page-size="pageInfo1.pageSize"
+                        layout="total, sizes, prev, pager, next, jumper,slot" v-bind:total="pageInfo1.total">
+                        <el-button style="border: 1px solid #c4c4c4;margin-left: 10px;">{{i18ns.common.confirm}}
+                        </el-button>
+                    </el-pagination>
+                </el-col>
+            </el-row>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="UpgradePackageisible=false">{{i18ns.common.cancel}}</el-button>
+                <el-button @click="packageSubmit" v-loading.fullscreen.lock="fullscreenLoading"
+                    :element-loading-text="i18ns.common.loading" type="primary" :disabled="checkedPackage.length==0">
+                    {{i18ns.common.confirm}}</el-button>
+            </div>
+        </el-dialog>
+        <!-- 替换 -->
+        <el-dialog :close-on-click-modal="false" :title="i18ns.upgradePackageWarehouse.versionWarehouse_replacement"
+            :visible.sync="replaceisible" width="80%" :close-on-click-modal="false">
+            <el-row>
+                <h2>{{i18ns.upgradePackageWarehouse.versionWarehouse_originalUpgradePackage}}</h2>
+            </el-row>
+            <el-table :data="oldPackage" border style="width: 100%;" header-row-class-name="my_table_header">
+                <el-table-column prop="PackageName" :label="i18ns.upgradePackageWarehouse.versionWarehouse_upgradeName"
+                    :show-overflow-tooltip="true"></el-table-column>
+                <el-table-column prop="SupportModel"
+                    :label="i18ns.upgradePackageWarehouse.versionWarehouse_productType"></el-table-column>
+                <el-table-column prop="Version" :label="i18ns.upgradePackageWarehouse.versionWarehouse_version">
+                    <template slot-scope="scope">
+                        <p v-for="vis in scope.row.Version"><span>{{vis.Module}}：</span>{{vis.CurrentVer}}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="Size" :label="i18ns.upgradePackageWarehouse.versionWarehouse_size">
+                    <template slot-scope="scope">
+                        {{unitFun(scope.row.Size)}}
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-row>
+                <h2>{{i18ns.upgradePackageWarehouse.versionWarehouse_replaceUpgradePackage}}</h2>
+            </el-row>
+            <el-table :data="replacePackage" border style="width: 100%;" header-row-class-name="my_table_header"
+                @current-change="replaceSelectionChange">
+                <el-table-column label="" width="70" center>
+                    <template slot-scope="scope">
+                        <el-radio class="radio" v-model="packageRadio" :label="scope.$index">&nbsp;</el-radio>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="PackageName" :label="i18ns.upgradePackageWarehouse.versionWarehouse_upgradeName"
+                    :show-overflow-tooltip="true"></el-table-column>
+                <el-table-column prop="SupportModel"
+                    :label="i18ns.upgradePackageWarehouse.versionWarehouse_productType"></el-table-column>
+                <el-table-column prop="Version" :label="i18ns.upgradePackageWarehouse.versionWarehouse_version">
+                    <template slot-scope="scope">
+                        <p v-for="vis in scope.row.Version"><span>{{vis.Module}}：</span>{{vis.CurrentVer}}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="Size" :label="i18ns.upgradePackageWarehouse.versionWarehouse_size">
+                    <template slot-scope="scope">
+                        {{unitFun(scope.row.Size)}}
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="replaceisible=false">{{i18ns.common.cancel}}</el-button>
+                <el-button @click="replaceSubmit" type="primary" :disabled="checkedReplacePackage==''">
+                    {{i18ns.upgradePackageWarehouse.versionWarehouse_replacement}}</el-button>
+            </div>
+        </el-dialog>
+        <!-- 添加时替换升级包 -->
+        <el-dialog :close-on-click-modal="false" :title="i18ns.common.prompt" :visible.sync="addPackageDialogisible"
+            width="60%" :close-on-click-modal="false">
+            <el-row>
+                <el-alert :title="i18ns.upgradePackageWarehouse.versionWarehouse_baselinePackageRepeat" type="info"
+                    :description="i18ns.upgradePackageWarehouse.versionWarehouse_baselinePackageRepeatTip" show-icon
+                    :closable="false">
+                </el-alert>
+            </el-row>
+            <el-table ref="addReplacePackage" :data="messageData" border style="width: 100%; margin-top: 10px;"
+                header-row-class-name="my_table_header" @selection-change="addPackageReplaceChange">
+                <el-table-column type="selection" width="55"> </el-table-column>
+                <el-table-column prop="SupportModel"
+                    :label="i18ns.upgradePackageWarehouse.versionWarehouse_productType"></el-table-column>
+                <el-table-column prop="hasVersion"
+                    :label="i18ns.upgradePackageWarehouse.versionWarehouse_existingVersion">
+                    <template slot-scope="scope">
+                        <p v-for="vis in scope.row.hasVersion"><span>{{vis.Module}}：</span>{{vis.CurrentVer}}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="replaceVersion"
+                    :label="i18ns.upgradePackageWarehouse.versionWarehouse_replaceVersion">
+                    <template slot-scope="scope">
+                        <p v-for="vis in scope.row.replaceVersion"><span>{{vis.Module}}：</span>{{vis.CurrentVer}}</p>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="addPackageDialogisible=false">{{i18ns.common.no}}</el-button>
+                <el-button @click="addReplacePackageSubmit" v-loading.fullscreen.lock="fullscreenLoading"
+                    v-if="replaceType=='package'" :element-loading-text="i18ns.common.loading" type="primary">
+                    {{i18ns.common.yes}}</el-button>
+                <el-button @click="importBaseReplace" v-loading.fullscreen.lock="fullscreenLoading"
+                    v-if="replaceType=='baseline'" :element-loading-text="i18ns.common.loading" type="primary">
+                    {{i18ns.common.yes}}</el-button>
+            </div>
+        </el-dialog>
+
+        <el-row>
+            <!-- 返回按钮 -->
+            <el-button style="margin-top:10px;" @click="back">{{i18ns.common.cancel}}</el-button>
+            <el-button style="margin-top:10px;" type="primary" @click="creatBaseline('creatForm')"
+                :disabled="versionList.length<=0">{{i18ns.common.submit}}</el-button>
+        </el-row>
+    </div>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                i18ns: [],
+                FDs: [],
+                FDIp: '',
+                deployId: '',
+                loading: false,
+                fullscreenLoading: false,
+                pageInfo1: {
+                    currentPage: 1,
+                    pageSizes: [10, 20, 50, 100],
+                    pageSize: 10,
+                    total: 0,
+                },
+                pageInfo2: {
+                    currentPage: 1,
+                    pageSizes: [10, 20, 50, 100],
+                    pageSize: 10,
+                    total: 0,
+                },
+                creatForm: {
+                    Name: '',
+                    Description: '',
+                    FirmwarePackages: []
+                },
+                rules: {
+                    Description: {
+                        required: false,
+                        validator: function (rule, value, callback) {
+                            if (value) {
+                                if (value.length > 256) {
+                                    return callback(new Error(app.i18ns.OSDeploy.deploy_descriptionLimit));
+                                } else
+                                    return callback();
+                            } else {
+                                return callback();
+                            }
+                        },
+                        trigger: 'change'
+                    },
+                    Name: {
+                        required: true,
+                        validator: function (rule, value, callback) {
+                            if (value) {
+                                if (!/^[a-zA-Z0-9_\-.\u4e00-\u9fa5]+$/.test(value)) {
+                                    return callback(new Error(app.i18ns.common.regExp_userName));
+                                } else
+                                    return callback();
+                            } else {
+                                return callback(new Error(app.i18ns.upgradePackageWarehouse
+                                    .configInfo_inputNotNull));
+                            }
+                        },
+                        trigger: 'blur'
+                    },
+                },
+                versionList: [],
+
+                baseLinelistData: [],
+                allBaseLinelist: [], //存放从接口返回的全部基线（不分页查询）
+                Baselineisible: false,
+                baselineRadio: '',
+                checkdBaseline: '', //选择的基线
+                //导入已有基线
+                UpgradePackageisible: false,
+                UpgradePackage: [],
+                allUpgradePackageList: [], //存放从接口返回的全部升级包（不分页查询）
+                checkedBaseId: '',
+                firmwarePackages: '',
+                //添加服务包
+                ProductType: '',
+                ProductTypes: [],
+                FirmwareType: [],
+                FirmwareTypeOptions: [],
+                checkedPackage: [],
+                addpackageRadio: '',
+                addpackageLoading: false,
+                packageValue: '1',
+                oldAllPackageList: [],
+                //替换
+                replaceisible: false,
+                oldPackage: [],
+                replacePackage: [],
+                packageRadio: '',
+                checkedReplacePackage: '',
+
+                // 修改的ID
+                baselineId: "",
+                // 添加升级包时的替换
+                messageCheckedList: '',
+                messageChecked: [],
+                messageData: [],
+                addPackageDialogisible: false,
+                hasData: '',
+                replaceType: 'baseline',
+                emptyText: ''
+            },
+            created: function () {
+                this.i18ns = getIn18();
+                this.emptyText = this.i18ns.common.loading;
+                this.baselineId = getQueryString('id');
+            },
+            mounted: function () {
+                var that = this;
+                //获取FD列表数据
+                setTimeout(function () {
+                    getFDList(that.bindFD);
+                }, 0);
+            },
+            methods: {
+                unitFun: function (Size) {
+                    return unitFun(Size)
+                },
+                /**
+                 * 获取FD数据 回调函数
+                 * 
+                 * @param {any} ret 
+                 */
+                bindFD: function (ret) {
+                    if (ret.code === '0') {
+                        var lg = ret.data.length;
+                        if (lg > 0) {
+                            for (var i = 0; i <
+                                lg; i++) {
+                                if (ret.data[i].aliasName) {
+                                    this.FDs.push({
+                                        label: ret.data[i].aliasName,
+                                        name: ret.data[i].hostIp
+                                    });
+                                } else {
+                                    this.FDs.push({
+                                        label: ret.data[i].hostIp,
+                                        name: ret.data[i].hostIp
+                                    });
+                                }
+                            }
+                            var currentFD = getCurrentFD();
+                            if (currentFD) {
+                                var _currentFD = _.find(this.FDs, {
+                                    name: currentFD
+                                })
+                                if (_currentFD) {
+                                    this.FDIp = currentFD;
+                                } else {
+                                    setCurrentFD(ret.data[0].hostIp);
+                                    this.FDIp = ret.data[0].hostIp;
+                                }
+                            } else {
+                                setCurrentFD(ret.data[0].hostIp);
+                                this.FDIp = ret.data[0].hostIp;
+                            }
+                            this.emptyText = this.i18ns.common.loading;
+                            this.getBaselineData();
+                        } else {
+                            alertMsg(getErrorMsg({
+                                code: '-90002'
+                            }));
+                        }
+                    } else {
+                        if (ret.ip != app.FDIp) {
+                            return false
+                        }
+                        var msg = getErrorMsg(ret);
+                        alertMsg(msg);
+                    }
+                },
+
+                /**
+                 * FD下拉框 点击切换事件
+                 * 
+                 * @param {any} command 
+                 * @param {any} com 
+                 */
+                commandClick: function () {
+                    setCurrentFD(this.FDIp);
+                    this.versionList = [];
+                },
+
+                /**
+                 * 导入已有基线
+                 */
+                importBaseline: function () {
+                    this.baselineRadio = "";
+                    this.checkedBaseId = "";
+                    this.Baselineisible = true;
+                    this.replaceType = 'baseline';
+                    this.pageInfo2.currentPage = 1;
+                    this.pageInfo2.pageSize = 10;
+                    if (app.pageInfo2.total > 0) {
+                        app.baseLinelistData = app.allBaseLinelist.slice(0, app.pageInfo2
+                            .pageSize);
+                    }
+                    // this.getBaselineData()
+                },
+
+                /**
+                 * 获取已有基线列表
+                 */
+                getBaselineData: function () {
+                    this.baseLinelistData = [];
+                    this.emptyText = this.i18ns.common.loading;
+                    this.pageInfo2.currentPage = 1;
+                    this.pageInfo2.pageSize = 10;
+                    upgradePackageManage.getAllBaselineList({
+                        ip: this.FDIp,
+                    }, function (ret) {
+                        app.emptyText = app.i18ns.common.noData;
+                        if (ret.code == '0') {
+                            //app.baseLinelistData = ret.data[0].data.Members;
+                            app.allBaseLinelist = ret.data[0].data.Members;
+                            app.pageInfo2.total = app.allBaseLinelist.length;
+
+                            for (var i = 0; i < app.allBaseLinelist.length; i++) {
+                                if (app.allBaseLinelist[i].UUID == app.baselineId) {
+                                    app.versionList = app.allBaseLinelist[i].FirmwarePackages;
+                                    app.creatForm.Name = app.allBaseLinelist[i].Name;
+                                    app.creatForm.Description = app.allBaseLinelist[i].Description;
+                                }
+                            }
+                            if (app.pageInfo2.total > 0) {
+                                app.baseLinelistData = app.allBaseLinelist.slice(0, app.pageInfo2
+                                    .pageSize);
+                            }
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                        }
+                    });
+                },
+
+                /**
+                 * 添加服务包
+                 */
+                addUpgradePackage: function () {
+                    this.addpackageRadio = "";
+                    this.FirmwareType = [];
+                    this.UpgradePackageisible = true;
+                    Vue.nextTick(function () {
+                        app.$refs.addpackage.clearSelection()
+                    })
+                    this.replaceType = 'package';
+                    this.getPackageList()
+                },
+                /**
+                 * 获取服务包列表
+                 */
+                getPackageList: function () {
+                    this.UpgradePackage = [];
+                    this.allUpgradePackageList = [];
+                    this.emptyText = this.i18ns.common.loading;
+                    upgradePackageManage.getAllPackageList({
+                        ip: this.FDIp,
+                        /*  "pageNo": this.currentPage,
+                         "pageSize": this.pageSize */
+                    }, function (ret) {
+                        app.emptyText = app.i18ns.common.noData;
+                        if (ret.code == '0') {
+                            app.total = ret.data[0].data['Members@odata.count'];
+                            var data = ret.data[0].data.Members;
+                            var arr = [];
+                            app.FirmwareTypeOptions = [];
+                            var result = [];
+                            for (var i = 0; i < data.length; i++) {
+                                var obj = {
+                                    SupportModel: data[i].ProductType,
+                                    Version: [],
+                                }
+                                for (var j = 0; j < data[i].Version.length; j++) {
+                                    var verObj = {
+                                        CurrentVer: data[i].Version[j].CurrentVer,
+                                        Module: data[i].Version[j].Module
+                                    }
+                                    obj.Version.push(verObj)
+                                    var model = {
+                                        label: data[i].Version[j].Module,
+                                        Module: data[i].Version[j].Module
+                                    }
+                                    // var isP = _.some(app.FirmwareTypeOptions, function (item) {
+                                    //     return item.Module == model.Module
+                                    // })
+                                    // if (!isP) {
+                                    //     app.FirmwareTypeOptions.push(model);
+                                    // }
+                                }
+                                arr.push(obj)
+                                data[i].SupportModel = arr[i].SupportModel;
+                                data[i].Version = arr[i].Version;
+                                data[i].Status = "Free";
+                                var isExist = false;
+                                for (var k = 0; k < app.versionList.length; k++) {
+                                    if (data[i].PackageName == app.versionList[k].PackageName) {
+                                        isExist = true;
+                                        break;
+                                    }
+                                }
+                                if (!isExist) {
+                                    result.push(data[i]);
+                                }
+                            }
+                            for (var i = 0; i < result.length; i++) {
+                                for (var j = 0; j < result[i].Version.length; j++) {
+                                    var model = {
+                                        label: result[i].Version[j].Module,
+                                        Module: result[i].Version[j].Module
+                                    }
+                                    var isP = _.some(app.FirmwareTypeOptions, function (item) {
+                                        return item.Module == model.Module
+                                    })
+                                    if (!isP) {
+                                        app.FirmwareTypeOptions.push(model);
+                                    }
+                                }
+                            }
+                            if (app.versionList.length > 0) {
+                                app.allUpgradePackageList = result;
+                                app.oldAllPackageList = result;
+                            } else {
+                                app.allUpgradePackageList = data;
+                                app.oldAllPackageList = data;
+                            }
+                            app.pageInfo1.total = app.allUpgradePackageList.length;
+                            if (app.pageInfo1.total > 0) {
+                                app.UpgradePackage = app.allUpgradePackageList.slice(0, app
+                                    .pageInfo1
+                                    .pageSize);
+                            }
+
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                        }
+                    });
+                },
+
+                /**
+                 * 服务包类型
+                 */
+                ProductTypeChange: function (val) {},
+                FirmwareTypeChange: function (val) {
+                    console.log(val)
+                    if (val.length <= 0) {
+                        this.allUpgradePackageList = this.oldAllPackageList;
+                        app.pageInfo1.total = app.allUpgradePackageList.length;
+                        if (app.pageInfo1.total > 0) {
+                            app.UpgradePackage = app.allUpgradePackageList.slice(0, app.pageInfo1
+                                .pageSize);
+                        }
+                        return false
+                    }
+                    var arr = [];
+                    _.each(this.oldAllPackageList, function (item) {
+                        if (_.some(item.Version, function (ver) {
+                                return val.indexOf(ver.Module) > -1
+                            })) {
+                            arr.push(item)
+                        }
+                    })
+                    this.allUpgradePackageList = arr;
+                    app.pageInfo1.total = app.allUpgradePackageList.length;
+                    if (app.pageInfo1.total > 0) {
+                        app.UpgradePackage = app.allUpgradePackageList.slice(0, app.pageInfo1
+                            .pageSize);
+                    }
+                },
+
+
+                /**
+                 * 禁用升级包的复选框
+                 */
+                checkboxT: function (row, index) {
+                    if (row.Status !== "Busy") {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                },
+                /**
+                 * 选择升级包
+                 */
+                packageSelectionChange: function (val) {
+                    this.checkedPackage = val;
+                    this.isCheck()
+                },
+
+                //判断是否是E9000包
+                notE9000: function (element) {
+                    var count = 0;
+                    var E9000ProductType = ["CH121 V5", "CH121L V5", "CH221 V5", "CH225 V5", "CH242 V5",
+                        "CX320", "CX916", "CX916L", "CX710", "CX920", "MM920", "MM920_MSMB"
+                    ];
+                    _.each(E9000ProductType, function (n) {
+                        if (element.ProductType.indexOf(n) === -1) {
+                            count++
+                        }
+                    });
+                    if (count === E9000ProductType.length) {
+                        return true
+                    } else {
+                        return false
+                    }
+                },
+                containsProduct: function (current, target) {
+                    var packageNameCheckFlag = _.difference(current.ProductType.split(';'), target
+                        .ProductType
+                        .split(';')).length < current.ProductType.split(';').length;
+                    if (!packageNameCheckFlag) {
+                        return false;
+                    }
+                    return true;
+                },
+                isCheck: function () {
+                    var checkedList = [],
+                        data = this.allUpgradePackageList;
+                    if (this.checkedPackage.length > 0) {
+                        _.each(this.checkedPackage, function (item) {
+                            checkedList.push(item.UUID);
+                        })
+                        _.each(checkedList, function (elementCheck) {
+                            _.each(data, function (element) {
+                                var versions = [];
+                                _.each(element.Version, function (elementVersion) {
+                                    versions.push(elementVersion.Module)
+                                });
+                                if (app.notE9000(element)) {
+                                    if (elementCheck === element.UUID && (element.Type ===
+                                            "Package_Software" || element.Type ===
+                                            "Package_Firmware")) {
+                                        _.each(data, function (elementModule) {
+                                            if (app.notE9000(elementModule)) {
+                                                if (app.containsProduct(element,
+                                                        elementModule) && element
+                                                    .Version[
+                                                        0].Module === elementModule
+                                                    .Version[0].Module) {
+                                                    if (element.UUID !==
+                                                        elementModule.UUID) {
+                                                        elementModule.Status =
+                                                            "Busy"
+                                                    }
+                                                }
+                                            }
+
+                                        })
+                                    }
+                                } else {
+                                    if (elementCheck === element.UUID && element.Type ===
+                                        "Board_Firmware") {
+                                        _.each(data, function (elementModule) {
+                                            if (!app.notE9000(elementModule)) {
+                                                if (app.containsProduct(element,
+                                                        elementModule)) {
+                                                    if (element.UUID !==
+                                                        elementModule.UUID) {
+                                                        elementModule.Status =
+                                                            "Busy"
+                                                    }
+                                                }
+                                            }
+
+                                        })
+                                    }
+                                    if (elementCheck === element.UUID && element.Type !==
+                                        "Board_Firmware") {
+                                        _.each(data, function (elementModule) {
+                                            if (!app.notE9000(elementModule)) {
+                                                if ((app.containsProduct(element,
+                                                            elementModule) &&
+                                                        element.Version[0]
+                                                        .Module ===
+                                                        elementModule.Version[0]
+                                                        .Module
+                                                    ) ||
+                                                    (app.containsProduct(element,
+                                                            elementModule) &&
+                                                        elementModule.Type ===
+                                                        "Board_Firmware")) {
+                                                    if (element.UUID !==
+                                                        elementModule.UUID) {
+                                                        elementModule.Status =
+                                                            "Busy"
+                                                    }
+                                                }
+                                            }
+
+                                        })
+                                    }
+                                }
+                            });
+                            _.each(data, function (element) {
+                                if (element.Status === "Busy") {
+                                    if (app.notE9000(element)) {
+                                        _.each(data, function (ele) {
+                                            if (app.notE9000(ele)) {
+                                                if ((element.UUID !== ele.UUID &&
+                                                        app.containsProduct(
+                                                            element, ele) &&
+                                                        element.Version[0]
+                                                        .Module ===
+                                                        ele.Version[0].Module &&
+                                                        !_.some(checkedList,
+                                                            function (item) {
+                                                                return item == ele
+                                                                    .UUID
+                                                            }) && ele.Status ===
+                                                        "Free" && element.Type !==
+                                                        "Board_Firmware")) {
+                                                    element.Status = "Free"
+                                                }
+                                            }
+                                        })
+                                    } else {
+                                        _.each(data, function (ele) {
+                                            if (!app.notE9000(ele)) {
+                                                if ((element.UUID !== ele.UUID &&
+                                                        app.containsProduct(
+                                                            element, ele) && !_
+                                                        .some(
+                                                            checkedList,
+                                                            function (item) {
+                                                                return item == ele
+                                                                    .UUID
+                                                            }) && ele.Status ===
+                                                        "Free" && (element.Type ===
+                                                            "Board_Firmware")) || (
+                                                        element.UUID !== ele.UUID &&
+                                                        element.ProductType === ele
+                                                        .ProductType && element
+                                                        .Version[
+                                                            0].Module === ele
+                                                        .Version[
+                                                            0].Module && !_.some(
+                                                            checkedList,
+                                                            function (item) {
+                                                                return item == ele
+                                                                    .UUID
+                                                            }) &&
+                                                        ele.Status ===
+                                                        "Free" && element.Type !==
+                                                        "Board_Firmware")) {
+                                                    element.Status = "Free"
+                                                }
+                                            }
+
+                                        })
+
+                                    }
+                                }
+
+
+                            });
+
+                        })
+                    } else {
+                        _.each(data, function (elementModule) {
+                            elementModule.Status = "Free"
+                        });
+                    }
+                },
+
+                /**
+                 * 删除全部
+                 */
+                deleteAll: function () {
+                    this.versionList = []
+                },
+
+                /**
+                 * 基线的单选
+                 */
+                handleradioChange: function (val) {
+                    if (val) {
+                        this.checkdBaseline = val.FirmwarePackages;
+                        this.checkedBaseId = val.UUID;
+                    }
+                },
+
+                /**
+                 * 确定导入已有基线
+                 */
+                inportSubmit: function () {
+                    var hasData = [],
+                        messageData = [],
+                        id = this.checkedBaseId,
+                        datas = this.versionList;
+                    var firmwarePackages = _.filter(this.baseLinelistData, function (item) {
+                        return item.UUID == id
+                    })[0].FirmwarePackages;
+                    _.each(_.map(datas, 'PackageName'), function (name) {
+                        firmwarePackages = _.without(firmwarePackages, _.filter(firmwarePackages,
+                            function (item) {
+                                return item.PackageName == name
+                            })[0]);
+                    });
+                    _.each(datas, function (data) {
+                        var packagesArr = _.filter(firmwarePackages, function (item) {
+                            return item.SupportModel == data.SupportModel
+                        });
+                        _.each(packagesArr, function (packagesobj) {
+                            if (data.Version.length === 1) {
+                                if (packagesobj.Version.length === 1) {
+                                    if (data.Version[0].Module === packagesobj.Version[0]
+                                        .Module) {
+                                        hasData.push(packagesobj);
+                                        messageData.push({
+                                            PackageName: packagesobj.PackageName,
+                                            SupportModel: packagesobj.SupportModel,
+                                            hasVersion: data.Version,
+                                            replaceVersion: packagesobj.Version
+                                        });
+                                    }
+                                } else {
+                                    if (packagesobj) {
+                                        hasData.push(packagesobj);
+                                        messageData.push({
+                                            PackageName: packagesobj.PackageName,
+                                            SupportModel: packagesobj.SupportModel,
+                                            hasVersion: data.Version,
+                                            replaceVersion: packagesobj.Version
+                                        });
+                                    }
+                                }
+                            } else {
+                                if (packagesobj) {
+                                    hasData.push(packagesobj);
+                                    messageData.push({
+                                        PackageName: packagesobj.PackageName,
+                                        SupportModel: packagesobj.SupportModel,
+                                        hasVersion: data.Version,
+                                        replaceVersion: packagesobj.Version
+                                    });
+                                }
+                            }
+                        });
+                    });
+                    hasData = _.uniq(hasData);
+                    if (hasData.length === 0) {
+                        datas = datas.concat(firmwarePackages);
+                        this.versionList = datas;
+                        this.Baselineisible = false;
+                    } else {
+                        app.addPackageDialogisible = true;
+                        app.messageData = messageData;
+                        var messageCheckedList = [];
+                        app.messageChecked = [];
+                        Vue.nextTick(function () {
+                            _.each(messageData, function (item) {
+                                messageCheckedList.push(item.PackageName);
+                                app.$refs.addReplacePackage.toggleRowSelection(item, true);
+                            })
+                        })
+                        this.messageCheckedList = messageCheckedList;
+                        this.hasData = hasData;
+                        this.firmwarePackages = firmwarePackages;
+                    }
+                },
+                /**
+                 * 确定添加服务包
+                 */
+                packageSubmit: function () {
+                    var hasData = [],
+                        messageData = [];
+                    var checkedList = [],
+                        datas = this.versionList,
+                        allDatabackup = JSON.parse(JSON.stringify(this.allUpgradePackageList));
+                    _.each(this.checkedPackage, function (item) {
+                        checkedList.push(item.UUID);
+                    })
+                    _.each(checkedList, function (id) {
+                        _.each(datas, function (data) {
+                            var packagesObj = _.filter(allDatabackup, function (item) {
+                                return item.UUID == id
+                            })[0];
+                            var packageNameCheckFlag = _.difference(packagesObj.ProductType.split(';'), data.SupportModel.split(';')).length < packagesObj.ProductType.split(';').length;
+                            if (!packageNameCheckFlag) {
+                                packagesObj = null;
+                            }
+                            if (packagesObj && data.Version.length === 1 && packagesObj
+                                .PackageName !==
+                                data.PackageName) {
+                                if (packagesObj.Version.length === 1) {
+                                    if (data.Version[0].Module === packagesObj.Version[0]
+                                        .Module) {
+                                        hasData.push(packagesObj);
+                                        messageData.push({
+                                            UUID: packagesObj.UUID,
+                                            SupportModel: packagesObj.SupportModel,
+                                            hasVersion: data.Version,
+                                            replaceVersion: packagesObj.Version
+                                        });
+                                    }
+                                } else {
+                                    hasData.push(packagesObj);
+                                    messageData.push({
+                                        UUID: packagesObj.UUID,
+                                        SupportModel: packagesObj.SupportModel,
+                                        hasVersion: data.Version,
+                                        replaceVersion: packagesObj.Version
+                                    });
+                                }
+                            } else if (packagesObj && packagesObj.PackageName !== data
+                                .PackageName) {
+                                hasData.push(packagesObj);
+                                messageData.push({
+                                    UUID: packagesObj.UUID,
+                                    SupportModel: packagesObj.SupportModel,
+                                    hasVersion: data.Version,
+                                    replaceVersion: packagesObj.Version
+                                });
+                            }
+                        })
+                    });
+                    hasData = _.uniq(hasData);
+
+                    if (hasData.length === 0) {
+                        _.each(checkedList, function (id) {
+                            var messageDataObj = _.filter(allDatabackup, function (item) {
+                                return item.UUID == id
+                            })[0];
+                            var scopeHasPackage = _.filter(datas, function (item) {
+                                return item.PackageName == messageDataObj.PackageName &&
+                                    item.SupportModel == messageDataObj.SupportModel
+                            })[0];
+                            if (!!messageDataObj && !scopeHasPackage) {
+                                messageDataObj.SupportModel = messageDataObj.SupportModel;
+                                datas.push(messageDataObj)
+                            }
+                        });
+                        this.UpgradePackageisible = false;
+                    } else {
+                        app.addPackageDialogisible = true;
+                        app.messageData = messageData;
+                        var messageCheckedList = [];
+                        app.messageChecked = [];
+                        Vue.nextTick(function () {
+                            _.each(messageData, function (item) {
+                                messageCheckedList.push(item.UUID);
+                                app.$refs.addReplacePackage.toggleRowSelection(item, true);
+                            })
+                            app.messageCheckedList = messageCheckedList;
+                        })
+                        this.hasData = hasData;
+                    }
+                },
+                /**
+                 * 添加升级包时的 替换的选择
+                 */
+                addPackageReplaceChange: function (val) {
+                    this.messageChecked = val;
+                },
+                /**
+                 * 添加升级包时的 替换
+                 */
+                addReplacePackageSubmit: function () {
+                    var deletePackagesArr = [];
+                    var datas = this.versionList,
+                        allDatabackup = JSON.parse(JSON.stringify(this.allUpgradePackageList)),
+                        hasData = this.hasData;
+                    var CheckedList = [];
+                    _.each(app.checkedPackage, function (item) {
+                        CheckedList.push(item.UUID)
+                    })
+                    _.each(this.messageCheckedList, function (id) {
+                        var hasObj = _.filter(hasData, function (item) {
+                            return item.UUID == id
+                        })[0];
+                        _.each(datas, function (data) {
+                            if (hasObj.Version.length === 1) {
+                                if (data.Version.length === 1) {
+                                    if (data.Version[0].Module === hasObj.Version[
+                                            0].Module && _.difference(hasObj.SupportModel
+                                            .split(
+                                                ';'), data.SupportModel.split(';')).length <
+                                        hasObj.SupportModel.split(';').length) {
+                                        deletePackagesArr.push(data);
+                                    }
+                                } else if (_.difference(hasObj.SupportModel.split(
+                                        ';'), data.SupportModel.split(';')).length <
+                                    hasObj.SupportModel.split(';').length) {
+                                    deletePackagesArr.push(data);
+                                }
+                            } else if (_.difference(hasObj.SupportModel.split(
+                                    ';'), data.SupportModel.split(';')).length <
+                                hasObj.SupportModel.split(';').length) {
+                                deletePackagesArr.push(data);
+                            }
+                        });
+                    });
+                    _.each(deletePackagesArr, function (deleteObj) {
+                        datas = _.without(datas, _.filter(datas, function (item) {
+                            return item.PackageName == deleteObj.PackageName && item
+                                .SupportModel ==
+                                deleteObj.SupportModel
+                        })[0]);
+                    });
+                    _.each(hasData, function (data) {
+                        if (app.messageCheckedList.indexOf(data.UUID) === -1) {
+                            CheckedList = _.without(CheckedList, data.UUID);
+                        }
+                    });
+                    _.each(CheckedList, function (id) {
+                        var messageDataObj = _.filter(allDatabackup, function (item) {
+                            return item.UUID == id
+                        })[0];
+                        var scopeHasPackage = _.filter(datas, function (item) {
+                            return item.PackageName == messageDataObj.PackageName && item
+                                .SupportModel ==
+                                messageDataObj.SupportModel
+                        })[0];
+                        if (!!messageDataObj && !scopeHasPackage) {
+                            messageDataObj.SupportModel = messageDataObj.SupportModel;
+                            datas.push(messageDataObj)
+                        }
+                    });
+                    console.log(datas)
+                    this.versionList = datas;
+                    app.addPackageDialogisible = false;
+                    this.UpgradePackageisible = false;
+                },
+                /**
+                 * 导入已有基线 替换
+                 */
+                importBaseReplace: function () {
+                    var deletePackagesArr = [],
+                        hasData = this.hasData,
+                        datas = this.versionList;
+                    var firmwarePackages = this.firmwarePackages;
+                    _.each(this.messageCheckedList, function (packageName) {
+                        var hasObj = _.filter(hasData, function (item) {
+                            return item.PackageName == packageName
+                        })[0];
+                        _.each(datas, function (data) {
+                            if (hasObj.Version.length === 1) {
+                                if (data.Version.length === 1) {
+                                    if (data.Version[0].Module === hasObj.Version[0]
+                                        .Module &&
+                                        data.SupportModel === hasObj.SupportModel) {
+                                        deletePackagesArr.push(data);
+                                    }
+                                } else if (data.SupportModel === hasObj.SupportModel) {
+                                    deletePackagesArr.push(data);
+                                }
+                            } else if (data.SupportModel === hasObj.SupportModel) {
+                                deletePackagesArr.push(data);
+                            }
+                        });
+                    });
+                    _.each(deletePackagesArr, function (deleteObj) {
+                        datas = _.without(datas, _.filter(datas, function (item) {
+                            return item.PackageName == deleteObj.PackageName && item
+                                .SupportModel ==
+                                deleteObj.SupportModel
+                        })[0]);
+                    });
+                    _.each(hasData, function (data) {
+                        if (app.messageCheckedList.indexOf(data.PackageName) === -1) {
+                            firmwarePackages = _.without(firmwarePackages, _.filter(
+                                firmwarePackages,
+                                function (item) {
+                                    return item.PackageName == deleteObj.PackageName &&
+                                        item.SupportModel == deleteObj.SupportModel
+                                })[0]);
+                        }
+                    });
+                    this.versionList = datas.concat(firmwarePackages);
+                    app.addPackageDialogisible = false;
+                    this.Baselineisible = false;
+                },
+
+                /**
+                 * 删除单个基线版本信息
+                 */
+                deleteOne: function (row, index) {
+                    this.versionList.splice(index, 1)
+                },
+
+                /**
+                 * 替换
+                 */
+                replaceOne: function (row) {
+                    this.packageRadio = "";
+                    this.oldPackage = [row];
+                    this.replacePackage = []
+                    this.replaceisible = true;
+                    upgradePackageManage.getAllPackageList({
+                        ip: this.FDIp,
+                    }, function (ret) {
+                        if (ret.code == '0') {
+                            var data = ret.data[0].data.Members,
+                                arr = [];
+                            var result = [];
+                            for (var i = 0; i < data.length; i++) {
+                                var obj = {
+                                    SupportModel: data[i].ProductType,
+                                    Version: [],
+                                }
+                                for (var j = 0; j < data[i].Version.length; j++) {
+                                    var verObj = {
+                                        CurrentVer: data[i].Version[j].CurrentVer,
+                                        Module: data[i].Version[j].Module
+                                    }
+                                    obj.Version.push(verObj)
+                                }
+                                arr.push(obj)
+                                data[i].SupportModel = arr[i].SupportModel;
+                                data[i].Version = arr[i].Version;
+                            }
+                            var packagesArr =[]
+                            _.each(data, function (packages) {
+                                var packageNameCheckFlag = _.difference(packages.ProductType.split(';'), row.SupportModel.split(';')).length < packages.ProductType.split(';').length;
+                                if (packageNameCheckFlag) {
+                                    packagesArr.push(packages);
+                                }
+                            });
+                            if (row.Version.length === 1) {
+                                _.each(packagesArr, function (packagesObj) {
+                                    if (packagesObj.Version.length === 1 && packagesObj
+                                        .PackageName !==row.PackageName) {
+                                        if (row.Version[0].Module === packagesObj.Version[0].Module) {
+                                            app.replacePackage.push(packagesObj);
+                                        }
+                                    } else if (packagesObj.PackageName !== row.PackageName) {
+                                        app.replacePackage.push(packagesObj);
+                                    }
+                                });
+                            } else {
+                                _.each(packagesArr, function (packagesObj) {
+                                    if (packagesObj.PackageName !== row.PackageName) {
+                                        app.replacePackage.push(packagesObj);
+                                    }
+                                });
+                            }
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                        }
+                    });
+                },
+
+                /**
+                 * 确定替换
+                 */
+                replaceSubmit: function () {
+                    var selectObj = this.checkedReplacePackage;
+                    var index = _.findIndex(this.versionList, this.oldPackage[0]);
+                    this.versionList.splice(index, 1, selectObj);
+                    this.replaceisible = false;
+                },
+                /**
+                 * 选择替换的服务包
+                 */
+                replaceSelectionChange: function (val) {
+                    this.checkedReplacePackage = val;
+                },
+
+                /**
+                 *  返回按钮方法 
+                 * **/
+                back: function () {
+                    window.location.href = './index.html?s=' + Math.random();
+                },
+                /**
+                 * 自建基线
+                 */
+                creatBaseline: function (formName) {
+                    app.creatForm.FirmwarePackages = [];
+                    this.$refs[formName].validate(function (valid) {
+                        if (valid) {
+                            _.each(app.versionList, function (item) {
+                                var obj = {
+                                    PackageName: item.PackageName,
+                                    Size: item.Size.toString(),
+                                    Source: item.Source,
+                                    SupportModel: item.SupportModel,
+                                    Version: []
+                                };
+                                _.each(item.Version, function (vis) {
+                                    obj.Version.push({
+                                        CurrentVer: vis.CurrentVer,
+                                        Module: vis.Module
+                                    })
+                                })
+                                app.creatForm.FirmwarePackages.push(obj);
+                                app.creatForm.ScopeURIs = []
+                            })
+                            upgradePackageManage.updateBaseline({
+                                ip: app.FDIp,
+                                id: app.baselineId,
+                                data: app.creatForm
+                            }, function (ret) {
+                                if (ret.code == '0') {
+                                    window.location.href = './index.html?s=' + Math
+                                        .random();
+                                } else {
+                                    if (ret.ip != app.FDIp) {
+                                        return false
+                                    }
+                                    var msg = getErrorMsg(ret);
+                                    alertMsg(msg);
+                                }
+                            });
+                        } else {
+                            return false;
+                        }
+                    })
+
+                },
+                /**
+                 * 设置当前显示数据的总数
+                 * 
+                 * @param {any} val 
+                 */
+                pageInfo1HandleSizeChange: function (val) {
+                    this.pageInfo1.pageSize = val;
+                    if (this.pageInfo1.total > 0) {
+                        if (this.pageInfo1.currentPage > 1) {
+                            var startIndex = (this.pageInfo1.currentPage - 1) * this.pageInfo1.pageSize;
+                            var endIndex = startIndex + this.pageInfo1.pageSize;
+                            app.UpgradePackage = app.allUpgradePackageList.slice(startIndex, endIndex);
+                        } else {
+                            app.UpgradePackage = app.allUpgradePackageList.slice(0, this.pageInfo1
+                                .pageSize);
+                        }
+                    }
+                },
+                /**
+                 * 切换当前显示页
+                 * 
+                 * @param {any} val 
+                 */
+                pageInfo1HandleCurrentChange: function (val) {
+                    this.pageInfo1.currentPage = val;
+                    if (this.pageInfo1.total > 0) {
+                        if (this.pageInfo1.currentPage > 1) {
+                            var startIndex = (this.pageInfo1.currentPage - 1) * this.pageInfo1.pageSize;
+                            var endIndex = startIndex + this.pageInfo1.pageSize;
+                            app.UpgradePackage = app.allUpgradePackageList.slice(startIndex, endIndex);
+                        } else {
+                            app.UpgradePackage = app.allUpgradePackageList.slice(0, this.pageInfo1
+                                .pageSize);
+                        }
+                    }
+                },
+
+
+                /**
+                 * 设置当前显示数据的总数
+                 * 
+                 * @param {any} val 
+                 */
+                pageInfo2HandleSizeChange: function (val) {
+                    this.pageInfo2.pageSize = val;
+                    if (this.pageInfo2.total > 0) {
+                        if (this.pageInfo2.currentPage > 1) {
+                            var startIndex = (this.pageInfo2.currentPage - 1) * this.pageInfo2.pageSize;
+                            var endIndex = startIndex + this.pageInfo2.pageSize;
+                            app.baseLinelistData = app.allBaseLinelist.slice(startIndex, endIndex);
+                        } else {
+                            app.baseLinelistData = app.allBaseLinelist.slice(0, this.pageInfo2.pageSize);
+                        }
+                    }
+                },
+                /**
+                 * 切换当前显示页
+                 * 
+                 * @param {any} val 
+                 */
+                pageInfo2HandleCurrentChange: function (val) {
+                    this.pageInfo2.currentPage = val;
+                    if (this.pageInfo2.total > 0) {
+                        if (this.pageInfo2.currentPage > 1) {
+                            var startIndex = (this.pageInfo2.currentPage - 1) * this.pageInfo2.pageSize;
+                            var endIndex = startIndex + this.pageInfo2.pageSize;
+                            app.baseLinelistData = app.allBaseLinelist.slice(startIndex, endIndex);
+                        } else {
+                            app.baseLinelistData = app.allBaseLinelist.slice(0, this.pageInfo2.pageSize);
+                        }
+                    }
+                },
+
+
+            }
+        });
+    </script>
+</body>
+
+</html>

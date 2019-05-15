@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>配置模板明细</title>
+    <link href="../../css/element.css" rel="stylesheet" />
+    <link href="../../css/style.css" rel="stylesheet" />
+    <script src="../../scripts/vue.js"></script>
+    <script src="../../scripts/element.js"></script>
+    <script src="../../scripts/jquery-3.2.1.min.js"></script>
+    <script src="../../scripts/i18n/zh-CN.js"></script>
+    <script src="../../scripts/i18n/en.js"></script>
+    <script src="../i18n/en.js"></script>
+    <script src="../i18n/zh-CN.js"></script>
+    <script src="../../scripts/polyfill.min.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../../scripts/web-platform.js"></script>
+    <script src="../js/errorCode.js"></script>
+    <script src="../../scripts/lodash.min.js"></script>
+    <script src="js/component.js"></script>
+    <script src="js/bios_detail.js"></script>
+    <script src="js/raid.js?s=1"></script>
+    <script src="js/ntp.js?s=1"></script>
+    <script src="js/dns.js"></script>
+    <script src="js/ldap.js"></script>
+    <script src="js/lom.js"></script>
+    <script src="js/mezz.js"></script>
+    <script src="js/rest.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        body {
+            min-width: 900px;
+        }
+
+        .el-icon-info {
+            margin-left: 20px;
+            color: #409eff;
+        }
+
+        .el-input-number span {
+            background-color: #fff;
+        }
+
+        .el-select .el-tag {
+            background-color: rgba(32, 160, 255, .1);
+            border-color: rgba(32, 160, 255, .2);
+            color: #20a0ff;
+        }
+
+        .el-select .el-tag .el-icon-close {
+            color: #409EFF;
+            background-color: rgba(32, 160, 255, .1);
+        }
+
+        .mypopover {
+            text-align: left;
+        }
+
+        .login-rule .el-input__inner {
+            height: 25px;
+        }
+
+        .el-collapse {
+            border: 1px solid #dfe6ec;
+        }
+
+        .el-collapse-item__header {
+            padding-left: 5px;
+        }
+
+        .el-collapse-item__arrow {
+            margin-right: 8px;
+            float: left;
+            font-weight: 400;
+        }
+
+        .el-table__expand-icon {
+            display: none;
+        }
+
+        .el-collapse-item__content {
+            padding-left: 12px;
+        }
+
+        .mezz .mezz-dialog-row {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <template>
+            <el-row>
+                <h2>{{i18ns.config.configurationModule_basicInfo}}</h2>
+            </el-row>
+            <el-form v-bind:model="ruleForm" v-bind:rules="rules" ref="ruleForm" v-bind:label-width="labelWidth"
+                label-position="left" label-suffix=":">
+                <el-form-item label="Fusion Director ">
+                    <span>{{ruleForm.FDIp}}</span>
+                </el-form-item>
+                <el-form-item label="UUID">
+                    <span>{{ruleForm.Id}}</span>
+                </el-form-item>
+                <el-form-item :label="i18ns.config.configurationModule_profileName" prop="Name">
+                    <span>{{ruleForm.Name}}</span>
+                </el-form-item>
+                <el-form-item :label="i18ns.config.configurationModule_description" prop="Description">
+                    <div>
+                        <p style="margin-top: 0px;">
+                            {{ruleForm.Description}}
+                        </p>
+                    </div>
+                </el-form-item>
+                <el-form-item :label="i18ns.config.configurationModule_deviceType" prop="ServerHardwareModelId">
+                    <span>{{ruleForm.ServerHardwareModelName}}</span>
+                </el-form-item>
+                <el-form-item :label="i18ns.config.configurationModule_createTime" prop="ServerHardwareModelId">
+                    <span>{{ruleForm.CreateTime}}</span>
+                </el-form-item>
+                <el-form-item :label="i18ns.config.configurationModule_modifyTime" prop="ServerHardwareModelId">
+                    <span>{{ruleForm.UpdateTime}}</span>
+                </el-form-item>
+                <el-form-item :label="i18ns.config.configurationModule_bindDeviceNum" prop="ServerHardwareModelId">
+                    <span>{{ruleForm.deviceCount}}</span>
+                </el-form-item>
+                <item-bios v-if="isShowBios&&ServerHardwareModelInfo_Bios.Catagory" :biso_items="ruleForm.BIOSSettings"
+                    :bios_info="ServerHardwareModelInfo_Bios" ref="bios"></item-bios>
+                <el-row v-if="deviceList.length>0">
+                    <el-row>
+                        <h2>{{i18ns.config.configurationModule_bindDevice}}</h2>
+                    </el-row>
+                    <el-row>
+                        <el-table :data="deviceList" border style="width: 100%;"
+                            header-row-class-name="my_table_header">
+                            <el-table-column prop="IPv4Address.Address" :label="i18ns.config.BMCIP"></el-table-column>
+                            <el-table-column prop="Profile.State" :label="i18ns.config.status">
+                                <template slot-scope="scope">
+                                    {{getStateTxt(scope.row.Profile.State)}}
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-row>
+
+                </el-row>
+                <item-raid :form_data="ruleForm.RAID" :raid_info="ServerHardwareModelInfo_Raid"
+                    v-if="ServerHardwareModelInfo_Raid&&ServerProfileSettings.RAID&&ServerHardwareModelInfo_Raid.Catagory"
+                    ref="raid"></item-raid>
+                <item-ntp :form_data="ruleForm.BMC.NTP" ref="ntp"
+                    v-if="ServerProfileSettings.BMC&&ServerHardwareModelInfo_BMC&&ServerHardwareModelInfo_BMC.Catagory">
+                </item-ntp>
+                <item-dns :form_data="ruleForm.BMC.DNS" ref="dns"
+                    v-if="ServerProfileSettings.BMC&&ServerHardwareModelInfo_BMC&&ServerHardwareModelInfo_BMC.Catagory">
+                </item-dns>
+                <item-ldap :form_data="ruleForm.BMC.LDAP" ref="ldap"
+                    v-if="ServerProfileSettings.BMC&&ServerHardwareModelInfo_BMC&&ServerHardwareModelInfo_BMC.Catagory"
+                    :login_rule="ruleForm.BMC.LoginRule" :ldap_service_enabled="ruleForm.BMC.LdapServiceEnabled">
+                </item-ldap>
+                <item-mezz v-if="MEZZConfigList.length>0&&isShowMEZZ" ref="mezz" :mezzs="MEZZConfigList"
+                    :bios="ruleForm.BIOSSettings" :advanced="ruleForm.ADVANCED">
+                </item-mezz>
+                <item-lom v-if="isShowLOM&&ServerProfileSettings.LOM" ref="lom" :configuration="LOMconfiguration"
+                    :bios="ruleForm.BIOSSettings" :advanced="ruleForm.ADVANCED">
+                </item-lom>
+                <div v-if="ruleForm.ServerHardwareModelId&&ServerProfileSettings.ADVANCED">
+                    <el-row>
+                        <h2>{{i18ns.config.configurationModule_seniorConfig}}</h2>
+                    </el-row>
+                    <el-form-item :label="i18ns.config.configurationModule_setGUIDAutomatically" prop=""
+                        v-if="ruleForm.ADVANCED.GUIDConfig">
+                        <div v-if="ruleForm.ADVANCED.GUIDConfig=='Enabled'">{{i18ns.config.Enabled}}</div>
+                        <div v-else-if="ruleForm.ADVANCED.GUIDConfig=='Disabled'">{{i18ns.config.Disabled}}</div>
+                        <div v-else>{{i18ns.config.Unchanged}}</div>
+                    </el-form-item>
+                    <el-form-item :label="i18ns.config.configurationModule_clearUniqueKey" prop=""
+                        v-if="ruleForm.ADVANCED.ClearUniqueKey!==undefined">
+                        <div v-if="ruleForm.ADVANCED.ClearUniqueKey===true">{{i18ns.config.TRUE}}</div>
+                        <div v-else-if="ruleForm.ADVANCED.ClearUniqueKey===false">{{i18ns.config.FALSE}}</div>
+                        <div v-else>{{i18ns.config.Unchanged}}</div>
+                    </el-form-item>
+                </div>
+            </el-form>
+            <div style="margin-left:10px; margin-top:20px;">
+                <el-button @click="goBack">{{i18ns.common.back}}</el-button>
+            </div>
+        </template>
+    </div>
+    <script type="text/template" id="bios">
+        <div>
+            <el-row>
+                <h2>{{i18ns.config.configurationModule_BIOSConfig}}</h2>
+            </el-row>
+            <el-row v-for="item in biosItems" :key="item.DisplayName">
+                <el-row v-if="item.children.length>0">
+                    <h3>{{i18ns.config[item.DisplayName]}}</h3>
+                </el-row>
+                <div v-if="item.MenuName!='BootSequence'">
+                    <el-row v-for="child  in item.children" :key="child.DisplayName">
+                        <el-form-item :label="i18ns.config[child.DisplayName]">
+                            <span>{{child.AttributeValueDisplayName?i18ns.config[child.AttributeValueDisplayName]:child.AttributeValue}}</span> 
+                          </el-form-item>
+                    </el-row>
+                </div>
+                <div v-else>
+                    <el-row>
+                        <el-form-item :label="i18ns.config.Boot_Sequence">
+                           <span>
+                               {{i18ns.config[item.children[0].AttributeValueDisplayName]}} >
+                           </span>
+                           <span>
+                                {{i18ns.config[item.children[1].AttributeValueDisplayName]}} >
+                            </span>
+                            <span>
+                                {{i18ns.config[item.children[2].AttributeValueDisplayName]}} >
+                            </span>
+                            <span>
+                                {{i18ns.config[item.children[3].AttributeValueDisplayName]}} 
+                            </span>
+                        </el-form-item>
+                    </el-row>
+                </div>
+            </el-row>
+        </div>
+    </script>
+
+    <script type="text/template" id="raid">
+        <div>
+            <el-row>
+                <h2>{{i18ns.config.Raid_Setting}}</h2>
+            </el-row>
+            <el-row style="margin-bottom: 16px;">
+                <span> {{i18ns.config.configurationModule_removePreviousSettings}}</span>
+                <span style="margin-left:15px;">{{form_data.RemovePreviousSettings?i18ns.common.yes:i18ns.common.no}}</span>
+            </el-row>
+            <el-row>
+                <el-table :data="raidGList" border style="width: 100%" v-show="raidGList.length>0"
+                    header-row-class-name="my_table_header">
+                    <!-- 名称 -->
+                    <el-table-column prop="VolumeName" :label="i18ns.config.configurationModule_name" width="130">
+
+                    </el-table-column>
+                    <!--控制器ID  -->
+                    <el-table-column prop="RAIDControllerID" :label="i18ns.config.configurationModule_storageId" width="140">
+                    </el-table-column>
+                    <!--  RAID级别-->
+                    <el-table-column prop="VolumeRaidLevel" :label="i18ns.config.configurationModule_RAIDLevel" width="130">
+                    </el-table-column>
+                    <!-- Span成员盘数 -->
+                    <el-table-column prop="SpanNumber" :label="i18ns.config.configurationModule_RAIDSpan" width="160">
+                    </el-table-column>
+                    <!-- 物理盘 -->
+                    <el-table-column prop="Drives" :label="i18ns.config.configurationModule_physicalDisk" min-width="180">
+                        <template slot-scope="scope">
+                            <template v-for="(item,index) in scope.row.Drives">
+                                <span v-if="index==0">Disk{{item}}</span>
+                                <span v-else>,Disk{{item}}</span>
+                            </template>
+                        </template>
+                    </el-table-column>
+                    <!-- 物理盘个数-->
+                    <el-table-column :label="i18ns.config.configurationModule_physicalDiskNum" width="90">
+                        <template slot-scope="scope">
+                            <span>{{scope.row.Drives.length}}</span>
+                        </template>
+                    </el-table-column>
+                    <!-- 启动盘 -->
+                    <el-table-column :label="i18ns.config.configurationModule_startupDisk" width="90">
+                        <template slot-scope="scope">
+                            {{scope.row.BootEnable?i18ns.common.yes:i18ns.common.no}}
+                        </template>
+                    </el-table-column>
+
+                </el-table>
+            </el-row>
+        </div>
+    </script>
+    <script type="text/template" id="ntp">
+        <div v-if="FDAsNTPServer||form_data.ServiceEnabled||form_data.NtpAddressOrigin
+        ||form_data.PreferredNtpServer||form_data.AlternateNtpServer||form_data.ServerAuthenticationEnabled
+        ||NTPSecretKeyText||!UnChangeMinPollingInterval||!UnChangeMaxPollingInterval">
+            <el-row>
+                <h2>{{i18ns.config.configurationModule_NTPSettings}}</h2>
+            </el-row>
+            <!-- NTP Sever为FusionDirector -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_FDNTPServer">
+                    <span v-if="FDAsNTPServer===true">{{i18ns.config.configurationModule_enable}}</span>
+                    <span v-if="FDAsNTPServer===false">{{i18ns.config.configurationModule_disable}}</span>
+                </el-form-item>
+            </el-row>
+            <!-- NTP使能 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_NTPEnable">
+                    <span v-if="form_data.ServiceEnabled===true">{{i18ns.config.configurationModule_enable}}</span>
+                    <span v-if="form_data.ServiceEnabled===false">{{i18ns.config.configurationModule_disable}}</span>
+                </el-form-item>
+            </el-row>
+            <!-- NTP模式 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_NTPAddressOrigin">
+                    <span v-if="form_data.NtpAddressOrigin=='Static'">{{i18ns.config.configurationModule_manuallyAcquire}}</span>
+                    <span v-else-if="form_data.NtpAddressOrigin=='IPv4'">{{i18ns.config.configurationModule_automaticallyAcquire+' IPv4'}}</span>
+                    <span v-else-if="form_data.NtpAddressOrigin=='IPv6'">{{i18ns.config.configurationModule_automaticallyAcquire+' IPv6'}}</span>
+
+                </el-form-item>
+            </el-row>
+            <!-- 首选NTP服务器地址 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_preferredNtpServer">
+                    {{form_data.PreferredNtpServer}}
+                </el-form-item>
+            </el-row>
+            <!-- 备用NTP服务器地址 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_alternateNtpServer">
+                    {{form_data.AlternateNtpServer}}
+                </el-form-item>
+            </el-row>
+            <!-- 服务器身份认证 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_serverAuthenticationEnabled">
+                    <span v-if="form_data.ServerAuthenticationEnabled===true">{{i18ns.config.configurationModule_certified}}</span>
+                    <span v-if="form_data.ServerAuthenticationEnabled===false">{{i18ns.config.configurationModule_unCertified}}</span>
+                </el-form-item>
+            </el-row>
+            <!-- 最小轮询间隔 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_minPollingInterval">
+                    {{form_data.MinPollingInterval}}
+                </el-form-item>
+            </el-row>
+            <!-- 最大轮询间隔 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_maxPollingInterval">
+                    {{form_data.MaxPollingInterval}}
+                </el-form-item>
+            </el-row>
+            <!-- NTP服务器密钥 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_NTPSecretKeyText">
+                    <el-row>
+                        {{NTPSecretKeyText?i18ns.config.configurationModule_uploaded:i18ns.config.configurationModule_unUploaded}}
+                    </el-row>
+                </el-form-item>
+            </el-row>
+        </div>
+    </script>
+    <script type="text/template" id="dns">
+        <div v-if="form_data.DNSAddressOrigin">
+            <el-row>
+                <h2>{{i18ns.config.configurationModule_DNSSettings}}</h2>
+            </el-row>
+            <!-- DNS服务器信息获取模式 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_DNSAddressOrigin">
+                    <span v-if="form_data.DNSAddressOrigin=='Static'">{{i18ns.config.configurationModule_manuallyAcquire}}</span>
+                    <span v-else-if="form_data.DNSAddressOrigin=='IPv4'">{{i18ns.config.configurationModule_automaticallyAcquire+' IPv4'}}</span>
+                    <span v-else-if="form_data.DNSAddressOrigin=='IPv6'">{{i18ns.config.configurationModule_automaticallyAcquire+' IPv6'}}</span>
+                </el-form-item>
+            </el-row>
+            <!-- 首选DNS服务器地址 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_alternateDnsServer">
+                    {{PreferredIP}}
+                </el-form-item>
+            </el-row>
+            <!-- 备选DNS服务器地址 -->
+            <el-row>
+                <el-form-item :label="i18ns.config.configurationModule_preferredDnsServer">
+                    {{AlternativeIP}}
+                </el-form-item>
+            </el-row>
+        </div>
+    </script>
+    <script type="text/template" id="ldap">
+        <div v-if="LdapServiceEnabled!==''||form_data.LdapServerAddress||form_data.LdapPort||form_data.domain||form_data.dir||!UnChangeLoginRule||!UnChangeLdapGroups">
+            <el-row>
+                <h2>{{i18ns.config.configurationModule_LDAPSettings}}</h2>
+            </el-row>
+            <!-- LDAP配置 -->
+            <div v-if="LdapServiceEnabled!==undefined||form_data.LdapServerAddress!==undefined||form_data.LdapPort!==undefined||domain||dir">
+                <el-row>
+                    <h3>{{i18ns.config.configurationModule_LDAPSettings}}</h3>
+                </el-row>
+                <!--  LDAP功能使能-->
+                <el-row>
+                    <el-form-item :label="i18ns.config.configurationModule_ldapServiceEnabled">
+                        <span v-if="LdapServiceEnabled===true">{{i18ns.config.configurationModule_enable}}</span>
+                        <span v-if="LdapServiceEnabled===false">{{i18ns.config.configurationModule_disable}}</span>
+                    </el-form-item>
+                </el-row>
+                <!-- 域控制器地址 -->
+                <el-row>
+                    <el-form-item :label="i18ns.config.configurationModule_ldapServerAddress">
+                        {{form_data.LdapServerAddress}}
+                    </el-form-item>
+                </el-row>
+                <!-- 域控制器端口号 -->
+                <el-row>
+                    <el-form-item :label="i18ns.config.configurationModule_ldapPort">
+                        {{form_data.LdapPort}}
+                    </el-form-item>
+                </el-row>
+                <!-- 域名 -->
+                <el-row>
+                    <el-form-item :label="i18ns.config.configurationModule_domainName">
+                        {{domain}}
+                    </el-form-item>
+                </el-row>
+                <!-- 用户搜索文件夹 -->
+                <el-row>
+                    <el-form-item :label="i18ns.config.configurationModule_userSearchFile">
+                        {{dir}}
+                    </el-form-item>
+                </el-row>
+            </div>
+            <!--用户组登录规则  -->
+            <div v-if="!UnChangeLoginRule">
+                <el-row>
+                    <h3>{{i18ns.config.configurationModule_groupLoginRule}}</h3>
+                </el-row>
+                <el-row class="login-rule">
+                    <el-table :data="LoginRule" border style="width: 100%" header-row-class-name="my_table_header">
+                        <el-table-column prop="" :label="i18ns.config.configurationModule_ruleName" width="90">
+                            <template slot-scope="scope">{{i18ns.config.configurationModule_rule+(scope.$index+1)}}</template>
+                        </el-table-column>
+                        <el-table-column prop="StartTime.value" :label="i18ns.config.configurationModule_ruleStartTime">
+                        </el-table-column>
+                        <el-table-column prop="EndTime.value" :label="i18ns.config.configurationModule_ruleEndTime">
+                        </el-table-column>
+                        <el-table-column prop="IP.value" :label="i18ns.config.configurationModule_ruleIP">
+                        </el-table-column>
+                        <el-table-column prop="Mac.value" :label="i18ns.config.configurationModule_ruleMac">
+                        </el-table-column>
+                        <el-table-column :label="i18ns.config.configurationModule_ruleEnabled" width="90">
+                            <template slot-scope="scope">
+                                {{scope.row.RuleEnabled?i18ns.config.Enabled:i18ns.config.Disabled}}
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-row>
+            </div>
+            <!-- LDAP用户组 -->
+            <div v-if="!UnChangeLdapGroups">
+                <el-row>
+                    <h3>{{i18ns.config.configurationModule_LDAPGroup}}</h3>
+                </el-row>
+                <el-row class="login-rule">
+                    <el-table :data="LdapGroups" border style="width: 100%" header-row-class-name="my_table_header">
+                        <!-- LDAP组 -->
+                        <el-table-column prop="GroupName.value" :label="i18ns.config.configurationModule_groupName">
+                        </el-table-column>
+                        <!-- LDAP组应用文件夹 -->
+                        <el-table-column prop="SearchFileName.value" :label="i18ns.config.configurationModule_searchFileName">
+                        </el-table-column>
+                        <!-- 用户组角色 -->
+                        <el-table-column prop="GroupRole.value" :label="i18ns.config.configurationModule_groupRole">
+                        </el-table-column>
+                        <!-- 用户组登录规则 -->
+                        <el-table-column prop="GroupLoginRule" :label="i18ns.config.configurationModule_groupLoginRule">
+                            <template slot-scope="scope">
+                                {{scope.row.GroupLoginRule.join(',')}}
+                            </template>
+                        </el-table-column>
+                        <!-- 用户组登录接口 -->
+                        <el-table-column prop="GroupLoginInterface" :label="i18ns.config.configurationModule_groupLoginInterface">
+                            <template slot-scope="scope">
+                                {{scope.row.GroupLoginInterface.join(',')}}
+                            </template>
+                        </el-table-column>
+                        <!-- 操作 -->
+
+                    </el-table>
+                </el-row>
+            </div>
+        </div>
+    </script>
+    <script type="text/template" id="lom">
+        <div>
+            <el-row>
+                <h2>{{i18ns.config.configurationModule_LOMCardConfig}}</h2>
+            </el-row>
+            <el-row style="color: #7593b2;margin-bottom:12px;">
+                {{i18ns.config.configurationModule_LOMCardDependTip}}
+            </el-row>
+            <el-table :data="dataList" ref="table" style="width: 100%">
+                <el-table-column prop="slot" :label="i18ns.config.configurationModule_netCartPosition">
+                </el-table-column>
+                <el-table-column prop="" :label="i18ns.common.operation">
+                    <template slot-scope="scope">
+                        <el-button type="text" @click="configLOM(scope.row)" :disabled="scope.row.isUnChange">{{i18ns.config.configurationModule_netCartView}}</el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column type="expand">
+                    <template slot-scope="scope">
+                        <el-tabs v-model="tabActive" style="margin-top:12px;" type="border-card" v-if="!scope.row.isUnChange">
+                            <el-tab-pane :label="'port'+(index+1)" :name="'port'+(index+1)" v-for="(item,index) in scope.row.PortsConfig"
+                                :key="index">
+                                <el-row>
+                                    <el-col :span="4">MACEffective</el-col>
+                                    <el-col :span="4">
+                                        {{item.PFsInfo[0].MACEffective?i18ns.common.enable:i18ns.common.close}}
+                                    </el-col>
+                                </el-row>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+        </div>
+    </script>
+    <script type="text/template" id="mezz">
+        <div class="mezz">
+            <el-row>
+                <h2>{{i18ns.config.configurationModule_NetworkCardConfig}}</h2>
+            </el-row>
+            <el-row style="color: #7593b2;margin-bottom:12px;">
+                {{i18ns.config.configurationModule_netCardDependTip}}
+            </el-row>
+            <el-table :data="_dataList" ref="table" style="width: 100%">
+                <el-table-column prop="cartType" :label="i18ns.config.configurationModule_netCartType">
+                </el-table-column>
+                <el-table-column prop="cartPosition" :label="i18ns.config.configurationModule_netCartPosition">
+                </el-table-column>
+                <el-table-column prop="" :label="i18ns.config.configurationModule_MultiChannel">
+                    <template slot-scope="scope">
+                        <div v-if="getMultiChannelShow(scope.row.cartType)">
+                            {{scope.row.multiChannel?'NPAR':'SF'}}
+                        </div>
+                        <div v-else>--</div>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="" :label="i18ns.common.operation">
+                    <template slot-scope="scope">
+                        <el-button type="text" @click="showConfig(scope.$index,scope.row)" :disabled="scope.row.isUnChange">{{i18ns.config.configurationModule_netCartView}}</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-dialog :close-on-click-modal="false"   :visible.sync="mz22Dialog.visible" width="80%" :title="i18ns.config.configurationModule_netCartOperation">
+                <el-tabs v-model="mz22Dialog.active">
+                    <el-tab-pane v-for="(item ,index) in dataList[mezzIndex].portConfig" :label="item.name" :name="index.toString()"
+                        :key="index">
+                        <el-row>
+                            <el-col :span="4" style="min-width:200px;">SAN Boot Enabled</el-col>
+                            <el-col :span="4" style="min-width:200px;">
+                                {{item.SANBootEnabled?i18ns.common.enable:i18ns.common.close}}
+                            </el-col>
+                        </el-row>
+                        <el-row v-show="item.SANBootEnabled" style="margin-top:12px;" class="mezz-boot">
+                            <el-table :data="item.FCoEBootToTargets.data" ref="bootTable" style="width: 100%">
+                                <el-table-column prop="FCoEWWPN" :label="i18ns.config.configurationModule_FCoEBootObjectiveWWPN">
+                                </el-table-column>
+                                <el-table-column prop="BootLun" :label="i18ns.config.configurationModule_FCoEBootObjectiveLUNID">
+                                </el-table-column>
+                                <el-table-column prop="TargetId" :label="i18ns.config.configurationModule_FCoEBootPriorityLevel">
+                                </el-table-column>
+                            </el-table>
+                        </el-row>
+                    </el-tab-pane>
+                </el-tabs>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="mz22Dialog.visible = false">{{i18ns.common.cancel}}</el-button>
+                </div>
+            </el-dialog>
+            <el-dialog :close-on-click-modal="false"   :visible.sync="mezz52singleChannelDialog.visible" width="90%" :title="i18ns.config.configurationModule_netCartOperation">
+                <el-tabs v-model="mezz52singleChannelDialog.active">
+                    <el-tab-pane v-for="(item ,index) in dataList[mezzIndex].portConfig" :label="item.name" :name="index.toString()"
+                        :key="index">
+                        <el-row class="mezz-dialog-row">
+                            <el-col :span="4" style="min-width:200px;">Boot Protocol</el-col>
+                            <el-col :span="4" style="min-width:200px;">
+                                {{item.BootProtocol}}
+                            </el-col>
+                        </el-row>
+                        <el-row v-show="item.BootProtocol=='PXE'" class="mezz-dialog-row">
+                            <el-col :span="4" style="min-width:200px;">PXE Vlan ID</el-col>
+                            <el-col :span="4" style="min-width:200px;">
+                                {{item.VlanId}}
+                            </el-col>
+                        </el-row>
+                        <el-row class="mezz-dialog-row">
+                            <el-col :span="4" style="min-width:200px;">SR-IOV</el-col>
+                            <el-col :span="4" style="min-width:200px;">
+                                {{item.SRIOVEnabled?i18ns.common.enable:i18ns.common.close}}
+                            </el-col>
+                        </el-row>
+                        <el-row v-show="item.BootProtocol=='FCoE'" class="mezz-dialog-row">
+                            <el-col :span="4" style="min-width:200px;">Boot To Target</el-col>
+                            <el-col :span="4" style="min-width:200px;">
+                                {{item.BootToTarget?i18ns.common.enable:i18ns.common.close}}
+                            </el-col>
+                        </el-row>
+                        <el-row v-show="item.BootToTarget&&item.BootProtocol=='FCoE'" style="margin-top:12px;" class="mezz-boot">
+                            <el-table :data="item.FCoEBootToTargets.data" ref="bootTable" style="width: 100%">
+                                <el-table-column prop="FCoEWWPN" :label="i18ns.config.configurationModule_FCoEBootObjectiveWWPN">
+                                    <template slot-scope="scope">
+                                        {{scope.row.FCoEWWPN!==''?scope.row.FCoEWWPN:'--'}}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="BootLun" :label="i18ns.config.configurationModule_FCoEBootObjectiveLUNID">
+                                    <template slot-scope="scope">
+                                        {{scope.row.BootLun!==''?scope.row.BootLun:'--'}}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="" :label="i18ns.config.configurationModule_FCoEBootEnable">
+                                    <template slot-scope="scope">
+                                        {{scope.row.TargetEnabled?i18ns.common.enable:i18ns.common.close}}
+                                    </template>
+
+                                </el-table-column>
+                                <el-table-column prop="TargetId" :label="i18ns.config.configurationModule_FCoEBootPriorityLevel">
+                                </el-table-column>
+                            </el-table>
+                        </el-row>
+                    </el-tab-pane>
+                </el-tabs>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="mezz52singleChannelDialog.visible = false">{{i18ns.common.cancel}}</el-button>
+                </div>
+            </el-dialog>
+            <el-dialog :close-on-click-modal="false"   :visible.sync="mezz52multiChannelDialog.visible" width="90%" :title="i18ns.config.configurationModule_netCartOperation">
+                <el-tabs v-model="mezz52multiChannelDialog.active">
+                    <el-tab-pane v-for="(item ,index) in dataList[mezzIndex].portConfig" :label="item.name" :name="index.toString()"
+                        :key="index">
+                        <el-row class="mezz-dialog-row">
+                            <el-col :span="4" style="min-width:200px;">Boot Protocol</el-col>
+                            <el-col :span="4" style="min-width:200px;">
+                                {{item.BootProtocol}}
+                            </el-col>
+                        </el-row>
+                        <el-row v-show="item.BootProtocol=='PXE'" class="mezz-dialog-row">
+                            <el-col :span="4" style="min-width:200px;">PXE Vlan ID</el-col>
+                            <el-col :span="4" style="min-width:200px;">
+                                {{item.VlanId}}
+                            </el-col>
+                        </el-row>
+                        <el-row class="mezz-dialog-row">
+                            <el-tabs v-model="mezz52multiChannelDialog.pfsInfoActive" type="card">
+                                <el-tab-pane v-for="(pf ,pfIndex) in item.PFsInfo " :label="'PF'+pf.PFId+':'+pf.Protocol"
+                                    :name="pfIndex.toString()" :key="pf.PFId">
+                                    <el-row>
+                                        <el-col :span="4" style="min-width:200px;">PF Type</el-col>
+                                        <el-col :span="4" style="min-width:200px;">
+                                            {{pf.Protocol}}
+                                        </el-col>
+                                    </el-row>
+                                    <el-row class="mezz-dialog-row">
+                                        <el-col :span="4" style="min-width:200px;">Minmum Bandwidth(%)</el-col>
+                                        <el-col :span="4" style="min-width:200px;">
+                                            {{pf.MinBandwidth}}
+                                        </el-col>
+                                    </el-row>
+                                    <el-row class="mezz-dialog-row">
+                                        <el-col :span="4" style="min-width:200px;">Maxmum Bandwidth(%)</el-col>
+                                        <el-col :span="4" style="min-width:200px;">
+                                            {{pf.MaxBandwidth}}
+                                        </el-col>
+                                    </el-row>
+                                </el-tab-pane>
+                            </el-tabs>
+                        </el-row>
+                        <el-row v-show="item.BootProtocol=='FCoE'" class="mezz-dialog-row">
+                            <el-col :span="4" style="min-width:200px;">Boot To Target</el-col>
+                            <el-col :span="4" style="min-width:200px;">
+                                {{item.BootToTarget?i18ns.common.enable:i18ns.common.close}}
+                            </el-col>
+                        </el-row>
+                        <el-row v-show="item.BootToTarget&&item.BootProtocol=='FCoE'" style="margin-top:12px;" class="mezz-boot">
+                            <el-table :data="item.FCoEBootToTargets.data" ref="bootTable" style="width: 100%">
+                                <el-table-column prop="FCoEWWPN" :label="i18ns.config.configurationModule_FCoEBootObjectiveWWPN">
+                                    <template slot-scope="scope">
+                                        {{scope.row.FCoEWWPN!==''?scope.row.FCoEWWPN:'--'}}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="BootLun" :label="i18ns.config.configurationModule_FCoEBootObjectiveLUNID">
+                                    <template slot-scope="scope">
+                                        {{scope.row.BootLun!==''?scope.row.BootLun:'--'}}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="" :label="i18ns.config.configurationModule_FCoEBootEnable">
+                                    <template slot-scope="scope">
+                                        {{scope.row.TargetEnabled?i18ns.common.enable:i18ns.common.close}}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="TargetId" :label="i18ns.config.configurationModule_FCoEBootPriorityLevel">
+                                </el-table-column>
+                            </el-table>
+                        </el-row>
+                    </el-tab-pane>
+                </el-tabs>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="mezz52multiChannelDialog.visible = false">{{i18ns.common.cancel}}</el-button>
+                </div>
+            </el-dialog>
+        </div>
+    </script>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                labelWidth: '220px',
+                i18ns: [],
+                FDList: [],
+                fullscreenLoading: false,
+                serverHardwareModels: [],
+                serverHardwareModel: {},
+                ServerHardwareModelInfo_Bios: {},
+                ServerHardwareModelInfo_Raid: {},
+                ServerHardwareModelInfo_BMC: {},
+                ServerHardwareModelInfo_LOM: {},
+                ServerHardwareModelInfo_MEZZ: [],
+                MEZZConfigList: [],
+                isShowLOM: false,
+                LOMconfiguration: {},
+                ServerHardwareModelInfo_ADVANCED: {},
+                activeName: '',
+                isShowBios: false,
+                isShowRAID: false,
+                isShowMEZZ: false,
+                deviceList: [],
+                ServerProfileSettings: {},
+                ruleForm: {
+                    Id: '',
+                    FDIp: '',
+                    Name: '',
+                    CreateTime: "",
+                    UpdateTime: '',
+                    Description: '',
+                    ServerHardwareModelId: '',
+                    ServerHardwareModelName: '',
+                    deviceCount: '0',
+                    BIOSSettings: {
+                        PCIePortDisable3: 'Unchanged',
+                        BootType: 'Unchanged'
+                    },
+                    RAID: {
+                        RemovePreviousSettings: false, //删除设备已有逻辑盘
+                        RAIDSettings: {}
+                    },
+                    BMC: {
+                        FDAsNTPServer: '', //NTP Sever为FusionDirector value:true,false, unChange
+                        NTPSecretKeyText: '', //NTP服务器密钥 FD UI是FDAsNTPServer为false才传，但是通过postman 测试其与FDAsNTPServer无关 可传空
+                        NTP: {
+                            ServiceEnabled: '', //NTP使能 value:true,false, unChange
+                            NtpAddressOrigin: '', //NTP模式  value:Static,IPv4,IPv6,unChange
+                            PreferredNtpServer: undefined, //首选NTP服务器地址
+                            AlternateNtpServer: undefined, //备用NTP服务器地址
+                            ServerAuthenticationEnabled: '', //服务器身份认证	 value:true,false, unChange
+                            MinPollingInterval: undefined, //最小轮询间隔 min:3 max:17
+                            MaxPollingInterval: undefined, //最大轮询间隔  min:3 max:17
+                            FDAsNTPServer: undefined, //NTP Sever为FusionDirector value:true,false, unChange
+                            NTPSecretKeyText: undefined //NTP服务器密钥 FD UI是FDAsNTPServer为false才传，但是通过postman 测试其与FDAsNTPServer无关 可传空
+                        },
+                        DNS: {
+                            DNSAddressOrigin: undefined,
+                            NameServers: []
+                        },
+                        LDAP: {
+                            LdapGroups: [],
+                            LdapPort: undefined,
+                            LdapServerAddress: undefined,
+                            UserDomain: undefined
+                        },
+                        LdapServiceEnabled: undefined,
+                        LoginRule: []
+                    },
+                    ADVANCED: {
+                        GUIDConfig: undefined,
+                        ClearUniqueKey: undefined,
+                    }
+                },
+                rules: {
+                    Description: {
+                        validator: function (rule, value, callback) {
+                            if (value) {
+                                if (getBytes(value) > 1024) {
+                                    return callback(new Error(app.i18ns.config
+                                        .configurationModule_submitErrorDescriptionPatternLabel));
+                                } else if (!/^[0-9a-zA-Z_\u4e00-\u9fa5\-\s]+$/.test(value)) {
+                                    return callback(new Error(app.i18ns.config
+                                        .configurationModule_submitErrorDescriptionPatternLabel));
+                                } else
+                                    return callback();
+                            } else {
+                                callback();
+                            }
+                        },
+                        trigger: 'change'
+                    }
+                }
+            },
+            computed: {
+
+            },
+            created: function () {
+                this.i18ns = getIn18();
+                this.ruleForm.FDIp = getCurrentFD();
+                this.ruleForm.Id = getQueryString('Id');
+                this.ruleForm.ServerHardwareModelName = getQueryString('serverHardwareModelName');
+            },
+            mounted: function () {
+                var that = this;
+                //获取FD列表数据
+                setTimeout(function () {
+                    that.getDeviceNum();
+                    that.getOneServerProfiles();
+                }, 0);
+            },
+            methods: {
+
+                /**
+                 * 获取设备绑定状态
+                 */
+                getStateTxt: function (State) {
+                    if (State == 'Binding') {
+                        return this.i18ns.config.configurationModule_stateBinding;
+                    } else if (State == "Active") {
+                        return this.i18ns.config.configurationModule_stateActive;
+                    } else if (State == "Unbinding") {
+                        return this.i18ns.config.configurationModule_stateUnbinding;
+                    } else {
+                        return this.i18ns.config.configurationModule_stateUnknown;
+                    }
+                },
+
+                /**
+                 * 获取模板详情
+                 * */
+                getOneServerProfiles: function () {
+                    this.fullscreenLoading = true;
+                    serverprofileManage.getOneServerProfiles({
+                        ip: this.ruleForm.FDIp,
+                        id: this.ruleForm.Id
+                    }, function (ret) {
+                        if (ret.code == '0') {
+                            app.ruleForm.Name = ret.data[0].data.Name;
+                            app.ruleForm.CreateTime = ret.data[0].data.CreateTime;
+                            app.ruleForm.UpdateTime = ret.data[0].data.UpdateTime;
+                            app.ruleForm.Description = ret.data[0].data.Description;
+                            var ServerProfileSettings = ret.data[0].data.ServerProfileSettings;
+                            app.ServerProfileSettings = ServerProfileSettings;
+                            if (_.keys(ServerProfileSettings.BIOS).length == 0) {
+                                app.isShowBios = false;
+                            } else {
+                                app.isShowBios = true;
+                                app.ruleForm.BIOSSettings = ServerProfileSettings.BIOS.BIOSSettings;
+                            }
+                            app.ruleForm.ServerHardwareModelId = ret.data[0].data
+                                .ServerHardwareModelId;
+                            serverprofileManage.getServerHardwareModel({
+                                ip: app.ruleForm.FDIp,
+                                id: app.ruleForm.ServerHardwareModelId
+                            }, function (result) {
+                                setTimeout(function () {
+                                    app.fullscreenLoading = false;
+                                }, intervalTime); //延迟半秒在关闭loading
+                                if (result.code === '0') {
+                                    var serverHardwareModel = result.data[0].data;
+                                    app.ruleForm.ServerHardwareModelName =
+                                        serverHardwareModel.Name;
+                                    app.ServerHardwareModelInfo_Bios = _.find(
+                                        serverHardwareModel.ServerHardwareModelInfo,
+                                        function (item) {
+                                            return item.Catagory == 'BIOS'
+                                        });
+                                    var raidConfig = _.find(
+                                        serverHardwareModel.ServerHardwareModelInfo,
+                                        function (
+                                            item) {
+                                            return item.Catagory == 'RAID'
+                                        });
+                                    if (raidConfig) {
+                                        app.ruleForm.RAID = ServerProfileSettings.RAID;
+                                    }
+                                    app.ServerHardwareModelInfo_Raid = raidConfig;
+                                    var bmcConfig = _.find(
+                                        serverHardwareModel.ServerHardwareModelInfo,
+                                        function (
+                                            item) {
+                                            return item.Catagory == 'BMC'
+                                        });
+
+                                    if (bmcConfig) {
+                                        if (ServerProfileSettings.BMC !== undefined) {
+                                            var bmc = ServerProfileSettings.BMC;
+                                            if (bmc.FDAsNTPServer !== undefined) {
+                                                app.ruleForm.BMC.NTP.FDAsNTPServer =
+                                                    bmc.FDAsNTPServer;
+                                            }
+                                            if (bmc.NTPSecretKeyText !== undefined) {
+                                                app.ruleForm.BMC.NTP.NTPSecretKeyText =
+                                                    bmc.NTPSecretKeyText;
+                                            }
+                                            if (bmc.NTP !== undefined) {
+                                                _.assign(app.ruleForm.BMC.NTP, bmc.NTP);
+                                            }
+                                            if (bmc.DNS !== undefined) {
+                                                _.assign(app.ruleForm.BMC.DNS, bmc.DNS);
+                                            }
+                                            if (bmc.LdapServiceEnabled !== undefined) {
+                                                app.ruleForm.BMC.LdapServiceEnabled =
+                                                    bmc.LdapServiceEnabled;
+                                            }
+                                            if (bmc.LoginRule !== undefined) {
+                                                app.ruleForm.BMC.LoginRule = bmc.LoginRule;
+                                            }
+                                            if (bmc.LDAP !== undefined) {
+                                                _.assign(app.ruleForm.BMC.LDAP, bmc.LDAP);
+                                            }
+                                        }
+                                    }
+                                    app.ServerHardwareModelInfo_BMC = bmcConfig;
+                                    app.ServerHardwareModelInfo_MEZZ = _.filter(
+                                        serverHardwareModel.ServerHardwareModelInfo,
+                                        function (
+                                            item) {
+                                            return item.Catagory.toLowerCase().slice(
+                                                0,
+                                                4) == 'mezz'
+                                        });
+
+                                    if (app.ServerHardwareModelInfo_MEZZ.length > 0) {
+                                        app.MEZZConfigList = [];
+                                        for (var k = 0; k < app.ServerHardwareModelInfo_MEZZ
+                                            .length; k++) {
+                                            var portConfigs = [];
+                                            var name = app.ServerHardwareModelInfo_MEZZ[
+                                                k].Catagory; //网卡名称
+                                            var isUnChange = true;
+                                            var multiChannel = false;
+                                            if (ServerProfileSettings[name]) {
+                                                app.isShowMEZZ = true;
+                                                portConfigs = ServerProfileSettings[
+                                                        name].Configuration
+                                                    .PortsConfig
+                                                isUnChange = false;
+                                                if (portConfigs[0].MultifunctionMode ==
+                                                    'NPAR') {
+                                                    multiChannel = true;
+                                                }
+                                            }
+                                            app.MEZZConfigList.push({
+                                                isUnChange: isUnChange,
+                                                cartPosition: name,
+                                                cartType: app
+                                                    .ServerHardwareModelInfo_MEZZ[
+                                                        k].Description, //卡槽
+                                                multiChannel: multiChannel, //多通道
+                                                portConfig: [],
+                                                portConfigs: portConfigs, //由方法getMEZZCartPortConfig给配置中放入值
+                                                portConfigDataBase: [] //用于保存数据回显
+                                            })
+                                        }
+                                    }
+                                    app.ServerHardwareModelInfo_LOM = _.find(
+                                        serverHardwareModel.ServerHardwareModelInfo,
+                                        function (item) {
+                                            return item.Catagory == 'LOM'
+                                        });
+                                    if (app.ServerHardwareModelInfo_LOM && _.keys(app
+                                            .ServerHardwareModelInfo_LOM
+                                            .ConfigList).length > 0) {
+                                        app.isShowLOM = true;
+                                        if (ServerProfileSettings.LOM) {
+                                            app.LOMconfiguration =
+                                                ServerProfileSettings.LOM
+                                                .Configuration;
+                                        }
+                                    } else {
+                                        app.isShowLOM = false;
+                                    }
+                                    app.ServerHardwareModelInfo_ADVANCED = _.find(
+                                        serverHardwareModel.ServerHardwareModelInfo,
+                                        function (item) {
+                                            return item.Catagory == 'ADVANCED'
+                                        });
+                                    if (ServerProfileSettings.ADVANCED) {
+                                        if (ServerProfileSettings.ADVANCED.GUIDConfig) {
+                                            app.ruleForm.ADVANCED.GUIDConfig =
+                                                ServerProfileSettings.ADVANCED.GUIDConfig;
+                                        }
+                                        if (ServerProfileSettings.ADVANCED
+                                            .ClearUniqueKey !==
+                                            undefined) {
+                                            app.ruleForm.ADVANCED.ClearUniqueKey =
+                                                ServerProfileSettings.ADVANCED
+                                                .ClearUniqueKey;
+                                        }
+                                    }
+                                }
+                            })
+                        } else {
+                            setTimeout(function () {
+                                app.fullscreenLoading = false;
+                            }, intervalTime); //延迟半秒在关闭loading
+                        }
+                    })
+                },
+
+                //返回列表
+                goBack: function () {
+                    window.location.href = '../configuration/index.html';
+                },
+
+                //获取绑定设备数量
+                getDeviceNum: function () {
+                    var param = {
+                        ip: this.ruleForm.FDIp,
+                        hardwareModelId: '',
+                        serverProfileId: this.ruleForm.Id
+                    }
+                    serverprofileManage.getNodeProfileQuery(param, function (ret) {
+                        app.deviceList = [];
+                        if (ret.code === '0') {
+                            app.ruleForm.deviceCount = ret.data[0].data.TotalCount;
+                            for (var i = 0; i < ret.data[0].data.Members.length; i++) {
+                                app.deviceList.push(ret.data[0].data.Members[i]);
+                            }
+                        } else {
+                            if (ret.ip != app.ruleForm.FDIp) {
+                                return false
+                            }
+                            msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                        }
+                    })
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

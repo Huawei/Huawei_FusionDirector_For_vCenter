@@ -1,0 +1,28 @@
+var i18n_v_zh_CN = {
+	menu_FD: "FusionDirector",
+	menu_vCenter_set: "设置",
+	menu_vCenter_ha_set: "HA和告警设置",
+	menu_server: "服务器",
+	menu_server_list: "服务器列表",
+	menu_configuration: '配置',
+	menu_profile: '配置模板',
+	menu_deployment: '部署',
+	menu_osImage: 'OS镜像管理',
+	menu_osDeploy: 'OS部署',
+	menu_task: '任务',
+	menu_upgrade:'固件升级',
+	menu_versionWarehouse:'版本仓库',
+	menu_upgradePackage:'升级包仓库',
+	menu_batchUpgrade:'批量升级',
+	menu_upgradePlan:'升级计划',
+	menu_DeviceVersionInfo:'设备版本状态',
+	menu_server_sourceManage: "软件源管理",
+	menu_server_moduleManage: "模板管理",
+	menu_server_moduleManage_task: "任务管理",
+	menu_server_firmware_upload: "固件上传",
+	menu_server_firmware_upgrade: "固件升级",
+	menu_about: "关于",
+	menu_setting:'设置',
+	menu_vCenter:'vCenter'
+
+}

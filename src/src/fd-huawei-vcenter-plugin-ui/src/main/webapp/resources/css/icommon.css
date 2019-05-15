@@ -1,0 +1,1279 @@
+@font-face {
+    font-family: 'icomoon';
+    src: url('fonts/icomoon.eot?cer6jq');
+    src: url('fonts/icomoon.eot?cer6jq#iefix') format('embedded-opentype'),
+        url('fonts/icomoon.ttf?cer6jq') format('truetype'),
+        url('fonts/icomoon.woff?cer6jq') format('woff'),
+        url('fonts/icomoon.svg?cer6jq#icomoon') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+[class^="icon-"],
+[class*=" icon-"] {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: 'icomoon' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-D_view:before {
+    content: "\e900";
+}
+
+.icon-about:before {
+    content: "\e901";
+}
+
+.icon-abutment:before {
+    content: "\e902";
+}
+
+.icon-Accumulated_power_consumption:before {
+    content: "\e903";
+}
+
+.icon-active_exchange_standby:before {
+    content: "\e904";
+}
+
+.icon-activity:before {
+    content: "\e905";
+}
+
+.icon-add:before {
+    content: "\e906";
+}
+
+.icon-add_device:before {
+    content: "\e907";
+}
+
+.icon-Add_Facilities:before {
+    content: "\e908";
+}
+
+.icon-addfw:before {
+    content: "\e909";
+}
+
+.icon-Adding_a_Component:before {
+    content: "\e90a";
+}
+
+.icon-Address_Pool:before {
+    content: "\e90b";
+}
+
+.icon-address_poola:before {
+    content: "\e90c";
+}
+
+.icon-after_contraction:before {
+    content: "\e90d";
+}
+
+.icon-aircraft:before {
+    content: "\e90e";
+}
+
+.icon-alarm:before {
+    content: "\e90f";
+}
+
+.icon-Alarm_Configuration:before {
+    content: "\e910";
+}
+
+.icon-Alarms_and_Events:before {
+    content: "\e911";
+}
+
+.icon-All_Reuse:before {
+    content: "\e912";
+}
+
+.icon-allocation:before {
+    content: "\e913";
+}
+
+.icon-apply:before {
+    content: "\e914";
+}
+
+.icon-arrange:before {
+    content: "\e915";
+}
+
+.icon-arrow_down:before {
+    content: "\e916";
+}
+
+.icon-arrow_left:before {
+    content: "\e917";
+}
+
+.icon-arrow_right:before {
+    content: "\e918";
+}
+
+.icon-arrow_up:before {
+    content: "\e919";
+}
+
+.icon-Asset_change_statistics-16:before {
+    content: "\e91a";
+}
+
+.icon-Asset_change_statistics-40:before {
+    content: "\e91b";
+}
+
+.icon-Asset_Details-15:before {
+    content: "\e91c";
+}
+
+.icon-Asset_Details-39:before {
+    content: "\e91d";
+}
+
+.icon-Asset_Overview-13:before {
+    content: "\e91e";
+}
+
+.icon-Asset_Overview-37:before {
+    content: "\e91f";
+}
+
+.icon-Asset_Panorama:before {
+    content: "\e920";
+}
+
+.icon-Asset_Panorama_View:before {
+    content: "\e921";
+}
+
+.icon-Asset_statistics:before {
+    content: "\e922";
+}
+
+.icon-assets-detail-drag .path1:before {
+    content: "\e923";
+    color: rgb(0, 0, 0);
+}
+
+.icon-assets-detail-drag .path2:before {
+    content: "\e924";
+    margin-left: -1em;
+    color: rgb(26, 26, 26);
+}
+
+.icon-assets-detail-drag .path3:before {
+    content: "\e925";
+    margin-left: -1em;
+    color: rgb(26, 26, 26);
+}
+
+.icon-backup:before {
+    content: "\e926";
+}
+
+.icon-baseline_management:before {
+    content: "\e927";
+}
+
+.icon-basic_information:before {
+    content: "\e928";
+}
+
+.icon-batch_import:before {
+    content: "\e929";
+}
+
+.icon-Batch_Set:before {
+    content: "\e92a";
+}
+
+.icon-before_contraction:before {
+    content: "\e92b";
+}
+
+.icon-BIOS_planning:before {
+    content: "\e92c";
+}
+
+.icon-BMC_planning:before {
+    content: "\e92d";
+}
+
+.icon-boot:before {
+    content: "\e92e";
+}
+
+.icon-cabinet:before {
+    content: "\e92f";
+}
+
+.icon-Cabinet_Management:before {
+    content: "\e930";
+}
+
+.icon-Cabinet_resources:before {
+    content: "\e931";
+}
+
+.icon-calculation:before {
+    content: "\e932";
+}
+
+.icon-card_planning:before {
+    content: "\e933";
+}
+
+.icon-cconfirm:before {
+    content: "\e934";
+}
+
+.icon-certification:before {
+    content: "\e935";
+}
+
+.icon-Change_event:before {
+    content: "\e936";
+}
+
+.icon-change_password:before {
+    content: "\e937";
+}
+
+.icon-check:before {
+    content: "\e938";
+}
+
+.icon-Clear:before {
+    content: "\e939";
+}
+
+.icon-cllection_after:before {
+    content: "\e93a";
+}
+
+.icon-cllection_before:before {
+    content: "\e93b";
+}
+
+.icon-close:before {
+    content: "\e93c";
+}
+
+.icon-collect:before {
+    content: "\e93d";
+}
+
+.icon-comment:before {
+    content: "\e93e";
+}
+
+.icon-Component_Removal:before {
+    content: "\e93f";
+}
+
+.icon-composer_certificate:before {
+    content: "\e940";
+}
+
+.icon-Configuration-and_OS_Deployment:before {
+    content: "\e941";
+}
+
+.icon-configuration:before {
+    content: "\e942";
+}
+
+.icon-configuration_check:before {
+    content: "\e943";
+}
+
+.icon-configuration_fileframe:before {
+    content: "\e944";
+}
+
+.icon-configuration_fileserver:before {
+    content: "\e945";
+}
+
+.icon-configuration_ip:before {
+    content: "\e946";
+}
+
+.icon-configuration_planning:before {
+    content: "\e947";
+}
+
+.icon-Configure_Profile:before {
+    content: "\e948";
+}
+
+.icon-Configuring_a_Planning_Task:before {
+    content: "\e949";
+}
+
+.icon-connectivity_test:before {
+    content: "\e94a";
+}
+
+.icon-continue:before {
+    content: "\e94b";
+}
+
+.icon-contrast:before {
+    content: "\e94c";
+}
+
+.icon-conventional:before {
+    content: "\e94d";
+}
+
+.icon-Cooling:before {
+    content: "\e94e";
+}
+
+.icon-copy:before {
+    content: "\e94f";
+}
+
+.icon-Create_Address_Pool:before {
+    content: "\e950";
+}
+
+.icon-Create_Device_Model:before {
+    content: "\e951";
+}
+
+.icon-data:before {
+    content: "\e952";
+}
+
+.icon-Data_Center_Information_Overview:before {
+    content: "\e953";
+}
+
+.icon-Data_center_management:before {
+    content: "\e954";
+}
+
+.icon-Data_Center_Resource_Overview:before {
+    content: "\e955";
+}
+
+.icon-Data_center_resources:before {
+    content: "\e956";
+}
+
+.icon-date_time:before {
+    content: "\e957";
+}
+
+.icon-delete:before {
+    content: "\e958";
+}
+
+.icon-deploy:before {
+    content: "\e959";
+}
+
+.icon-Deploy_and_Configure_OS:before {
+    content: "\e95a";
+}
+
+.icon-Device:before {
+    content: "\e95b";
+}
+
+.icon-Device_installation:before {
+    content: "\e95c";
+}
+
+.icon-Device_Model:before {
+    content: "\e95d";
+}
+
+.icon-Device_Removal:before {
+    content: "\e95e";
+}
+
+.icon-devicepool:before {
+    content: "\e95f";
+}
+
+.icon-Disabling_Intelligent_Power_Saving:before {
+    content: "\e960";
+}
+
+.icon-disk:before {
+    content: "\e961";
+}
+
+.icon-DNSConfiguration:before {
+    content: "\e962";
+}
+
+.icon-docking_system:before {
+    content: "\e963";
+}
+
+.icon-downarrow:before {
+    content: "\e964";
+}
+
+.icon-download:before {
+    content: "\e965";
+}
+
+.icon-draft:before {
+    content: "\e966";
+}
+
+.icon-draft_configuration:before {
+    content: "\e967";
+}
+
+.icon-drive_upgrade:before {
+    content: "\e968";
+}
+
+.icon-edit:before {
+    content: "\e969";
+}
+
+.icon-effective:before {
+    content: "\e96a";
+}
+
+.icon-empty:before {
+    content: "\e96b";
+}
+
+.icon-empty_withdraw:before {
+    content: "\e96c";
+}
+
+.icon-Enable_power_capping:before {
+    content: "\e96d";
+}
+
+.icon-Enabling_Intelligent_Energy_Saving:before {
+    content: "\e96e";
+}
+
+.icon-Energy_consumption:before {
+    content: "\e96f";
+}
+
+.icon-Energy_consumption_statistics:before {
+    content: "\e970";
+}
+
+.icon-energy-computer:before {
+    content: "\e971";
+}
+
+.icon-entr_exit_management:before {
+    content: "\e972";
+}
+
+.icon-executing:before {
+    content: "\e973";
+}
+
+.icon-exit:before {
+    content: "\e974";
+}
+
+.icon-export:before {
+    content: "\e975";
+}
+
+.icon-failed_to_retry:before {
+    content: "\e976";
+}
+
+.icon-failure:before {
+    content: "\e977";
+}
+
+.icon-failure_license:before {
+    content: "\e978";
+}
+
+.icon-Fault_prediction:before {
+    content: "\e979";
+}
+
+.icon-file:before {
+    content: "\e97a";
+}
+
+.icon-Filter:before {
+    content: "\e97b";
+}
+
+.icon-Filter_1:before {
+    content: "\e97c";
+}
+
+.icon-filter_conditions:before {
+    content: "\e97d";
+}
+
+.icon-find:before {
+    content: "\e97e";
+}
+
+.icon-firmware_upgrade:before {
+    content: "\e97f";
+}
+
+.icon-folder:before {
+    content: "\e980";
+}
+
+.icon-Foldera:before {
+    content: "\e981";
+}
+
+.icon-frame:before {
+    content: "\e982";
+}
+
+.icon-GPUpool:before {
+    content: "\e983";
+}
+
+.icon-Hard_disk:before {
+    content: "\e984";
+}
+
+.icon-hardware:before {
+    content: "\e985";
+}
+
+.icon-Have_in_hand:before {
+    content: "\e986";
+}
+
+.icon-have_read:before {
+    content: "\e987";
+}
+
+.icon-help:before {
+    content: "\e988";
+}
+
+.icon-home:before {
+    content: "\e989";
+}
+
+.icon-Idle_server_prompt:before {
+    content: "\e98a";
+}
+
+.icon-Implement_Rollout_Plane:before {
+    content: "\e98b";
+}
+
+.icon-import:before {
+    content: "\e98c";
+}
+
+.icon-important:before {
+    content: "\e98d";
+}
+
+.icon-increases:before {
+    content: "\e98e";
+}
+
+.icon-Intelligent_energy_consumption_analysis:before {
+    content: "\e98f";
+}
+
+.icon-Intelligent_energy_saving_management:before {
+    content: "\e990";
+}
+
+.icon-Intelligent_power_capping:before {
+    content: "\e991";
+}
+
+.icon-Intelligent_power_consumption_optimization:before {
+    content: "\e992";
+}
+
+.icon-ip:before {
+    content: "\e993";
+}
+
+.icon-IRM_Upgrade:before {
+    content: "\e994";
+}
+
+.icon-issued:before {
+    content: "\e995";
+}
+
+.icon-kvm:before {
+    content: "\e996";
+}
+
+.icon-Large_to_Small:before {
+    content: "\e997";
+}
+
+.icon-ldap:before {
+    content: "\e998";
+}
+
+.icon-ldap_configuration:before {
+    content: "\e999";
+}
+
+.icon-leftarrow:before {
+    content: "\e99a";
+}
+
+.icon-less:before {
+    content: "\e99b";
+}
+
+.icon-license:before {
+    content: "\e99c";
+}
+
+.icon-license_failure:before {
+    content: "\e99d";
+}
+
+.icon-listmode:before {
+    content: "\e99e";
+}
+
+.icon-Load:before {
+    content: "\e99f";
+}
+
+.icon-loading:before {
+    content: "\e9a0";
+}
+
+.icon-Location_Plan:before {
+    content: "\e9a1";
+}
+
+.icon-lock:before {
+    content: "\e9a2";
+}
+
+.icon-log:before {
+    content: "\e9a3";
+}
+
+.icon-log_set:before {
+    content: "\e9a4";
+}
+
+.icon-logset:before {
+    content: "\e9a5";
+}
+
+.icon-Low_load_server_analysis:before {
+    content: "\e9a6";
+}
+
+.icon-Low_load_server_prompt:before {
+    content: "\e9a7";
+}
+
+.icon-mac:before {
+    content: "\e9a8";
+}
+
+.icon-Maintenance_Information-17:before {
+    content: "\e9a9";
+}
+
+.icon-Maintenance_Information-41:before {
+    content: "\e9aa";
+}
+
+.icon-Maintenance_Information-57:before {
+    content: "\e9ab";
+}
+
+.icon-manager_certificate:before {
+    content: "\e9ac";
+}
+
+.icon-Memory:before {
+    content: "\e9ad";
+}
+
+.icon-mirror_deployment:before {
+    content: "\e9ae";
+}
+
+.icon-mirror_management:before {
+    content: "\e9af";
+}
+
+.icon-modify:before {
+    content: "\e9b0";
+}
+
+.icon-modify_ip:before {
+    content: "\e9b1";
+}
+
+.icon-monitor:before {
+    content: "\e9b2";
+}
+
+.icon-more:before {
+    content: "\e9b3";
+}
+
+.icon-network_configuration:before {
+    content: "\e9b4";
+}
+
+.icon-Network_resources:before {
+    content: "\e9b5";
+}
+
+.icon-NEW:before {
+    content: "\e9b6";
+}
+
+.icon-node_management:before {
+    content: "\e9b7";
+}
+
+.icon-node_relocation:before {
+    content: "\e9b8";
+}
+
+.icon-Normal_alarm:before {
+    content: "\e9b9";
+}
+
+.icon-notification_configuration:before {
+    content: "\e9ba";
+}
+
+.icon-On_shelf:before {
+    content: "\e9bb";
+}
+
+.icon-On-line_planning:before {
+    content: "\e9bc";
+}
+
+.icon-OS_Image:before {
+    content: "\e9bd";
+}
+
+.icon-Overview:before {
+    content: "\e9be";
+}
+
+.icon-overviewa:before {
+    content: "\e9bf";
+}
+
+.icon-Percentage_of_space_U_space:before {
+    content: "\e9c0";
+}
+
+.icon-PKEYpool:before {
+    content: "\e9c1";
+}
+
+.icon-plug:before {
+    content: "\e9c2";
+}
+
+.icon-plug_disconnect:before {
+    content: "\e9c3";
+}
+
+.icon-position:before {
+    content: "\e9c4";
+}
+
+.icon-Power_consumption_statistics:before {
+    content: "\e9c5";
+}
+
+.icon-Power_distribution_group:before {
+    content: "\e9c6";
+}
+
+.icon-Power_Distribution_Risk_Analysis:before {
+    content: "\e9c7";
+}
+
+.icon-Power_Distribution_Risk_Warning:before {
+    content: "\e9c8";
+}
+
+.icon-Power_off:before {
+    content: "\e9c9";
+}
+
+.icon-Power_on:before {
+    content: "\e9ca";
+}
+
+.icon-profile:before {
+    content: "\e9cb";
+}
+
+.icon-prompt:before {
+    content: "\e9cc";
+}
+
+.icon-proxy_configuration:before {
+    content: "\e9cd";
+}
+
+.icon-RAID_planning:before {
+    content: "\e9ce";
+}
+
+.icon-reduce:before {
+    content: "\e9cf";
+}
+
+.icon-refresh:before {
+    content: "\e9d0";
+}
+
+.icon-Remove:before {
+    content: "\e9d1";
+}
+
+.icon-rename:before {
+    content: "\e9d2";
+}
+
+.icon-renew:before {
+    content: "\e9d3";
+}
+
+.icon-replace:before {
+    content: "\e9d4";
+}
+
+.icon-report:before {
+    content: "\e9d5";
+}
+
+.icon-required:before {
+    content: "\e9d6";
+}
+
+.icon-Reset:before {
+    content: "\e9d7";
+}
+
+.icon-Resource_change_trend:before {
+    content: "\e9d8";
+}
+
+.icon-restart:before {
+    content: "\e9d9";
+}
+
+.icon-restore:before {
+    content: "\e9da";
+}
+
+.icon-Restore_the_default_home_page:before {
+    content: "\e9db";
+}
+
+.icon-retry:before {
+    content: "\e9dc";
+}
+
+.icon-return_down:before {
+    content: "\e9dd";
+}
+
+.icon-return_left:before {
+    content: "\e9de";
+}
+
+.icon-return_right:before {
+    content: "\e9df";
+}
+
+.icon-return_up:before {
+    content: "\e9e0";
+}
+
+.icon-rightarrow:before {
+    content: "\e9e1";
+}
+
+.icon-s_vfailed:before {
+    content: "\e9e2";
+}
+
+.icon-save:before {
+    content: "\e9e3";
+}
+
+.icon-search:before {
+    content: "\e9e4";
+}
+
+.icon-secondary:before {
+    content: "\e9e5";
+}
+
+.icon-security:before {
+    content: "\e9e6";
+}
+
+.icon-security_policy:before {
+    content: "\e9e7";
+}
+
+.icon-select_all:before {
+    content: "\e9e8";
+}
+
+.icon-select_none:before {
+    content: "\e9e9";
+}
+
+.icon-selectall:before {
+    content: "\e9ea";
+}
+
+.icon-selectnone:before {
+    content: "\e9eb";
+}
+
+.icon-server:before {
+    content: "\e9ec";
+}
+
+.icon-server_refresh:before {
+    content: "\e9ed";
+}
+
+.icon-Server_resources:before {
+    content: "\e9ee";
+}
+
+.icon-service_support:before {
+    content: "\e9ef";
+}
+
+.icon-set:before {
+    content: "\e9f0";
+}
+
+.icon-Sets_the_cap_value:before {
+    content: "\e9f1";
+}
+
+.icon-Setting_Power_Supply_Information:before {
+    content: "\e9f2";
+}
+
+.icon-shield:before {
+    content: "\e9f3";
+}
+
+.icon-shield_cancel:before {
+    content: "\e9f4";
+}
+
+.icon-shield_rule:before {
+    content: "\e9f5";
+}
+
+.icon-shutdown:before {
+    content: "\e9f6";
+}
+
+.icon-skin:before {
+    content: "\e9f7";
+}
+
+.icon-Small_to_Large:before {
+    content: "\e9f8";
+}
+
+.icon-smallarrow_down:before {
+    content: "\e9f9";
+}
+
+.icon-smallarrow_left:before {
+    content: "\e9fa";
+}
+
+.icon-smallarrow_right:before {
+    content: "\e9fb";
+}
+
+.icon-smallarrow_up:before {
+    content: "\e9fc";
+}
+
+.icon-SN_Plan:before {
+    content: "\e9fd";
+}
+
+.icon-software_upgrades:before {
+    content: "\e9fe";
+}
+
+.icon-sorting:before {
+    content: "\e9ff";
+}
+
+.icon-Space:before {
+    content: "\ea00";
+}
+
+.icon-Spatial_optimization_analysis:before {
+    content: "\ea01";
+}
+
+.icon-sso:before {
+    content: "\ea02";
+}
+
+.icon-start:before {
+    content: "\ea03";
+}
+
+.icon-start_refreshing:before {
+    content: "\ea04";
+}
+
+.icon-statistical:before {
+    content: "\ea05";
+}
+
+.icon-Statistics:before {
+    content: "\ea06";
+}
+
+.icon-stop:before {
+    content: "\ea07";
+}
+
+.icon-stop_refreshing:before {
+    content: "\ea08";
+}
+
+.icon-storage:before {
+    content: "\ea09";
+}
+
+.icon-Storage_resources:before {
+    content: "\ea0a";
+}
+
+.icon-Subrack_resources:before {
+    content: "\ea0b";
+}
+
+.icon-success:before {
+    content: "\ea0c";
+}
+
+.icon-suspend:before {
+    content: "\ea0d";
+}
+
+.icon-switch:before {
+    content: "\ea0e";
+}
+
+.icon-system_informs:before {
+    content: "\ea0f";
+}
+
+.icon-system_upgrade:before {
+    content: "\ea10";
+}
+
+.icon-task:before {
+    content: "\ea11";
+}
+
+.icon-Task_Statistics:before {
+    content: "\ea12";
+}
+
+.icon-Temperature_risk_analysis:before {
+    content: "\ea13";
+}
+
+.icon-Top_N-Usable_Usages:before {
+    content: "\ea14";
+}
+
+.icon-Top_N_in_high_temperature:before {
+    content: "\ea15";
+}
+
+.icon-topology:before {
+    content: "\ea16";
+}
+
+.icon-U_bit_alarm_prompt:before {
+    content: "\ea17";
+}
+
+.icon-UFMpool:before {
+    content: "\ea18";
+}
+
+.icon-UID_lighting:before {
+    content: "\ea19";
+}
+
+.icon-UID_lights_off:before {
+    content: "\ea1a";
+}
+
+.icon-unlock:before {
+    content: "\ea1b";
+}
+
+.icon-unread:before {
+    content: "\ea1c";
+}
+
+.icon-untied:before {
+    content: "\ea1d";
+}
+
+.icon-uparrow:before {
+    content: "\ea1e";
+}
+
+.icon-update_configuration:before {
+    content: "\ea1f";
+}
+
+.icon-updated:before {
+    content: "\ea20";
+}
+
+.icon-upgrade:before {
+    content: "\ea21";
+}
+
+.icon-upgrade_device_version:before {
+    content: "\ea22";
+}
+
+.icon-upgrade_many:before {
+    content: "\ea23";
+}
+
+.icon-upgrade_overview:before {
+    content: "\ea24";
+}
+
+.icon-upgrade_plan:before {
+    content: "\ea25";
+}
+
+.icon-upgrade_policy:before {
+    content: "\ea26";
+}
+
+.icon-upgrade_status:before {
+    content: "\ea27";
+}
+
+.icon-upgrade_storage:before {
+    content: "\ea28";
+}
+
+.icon-upgrade_todevice:before {
+    content: "\ea29";
+}
+
+.icon-upload:before {
+    content: "\ea2a";
+}
+
+.icon-urgent:before {
+    content: "\ea2b";
+}
+
+.icon-user:before {
+    content: "\ea2c";
+}
+
+.icon-user_management:before {
+    content: "\ea2d";
+}
+
+.icon-verification:before {
+    content: "\ea2e";
+}
+
+.icon-viewmode:before {
+    content: "\ea2f";
+}
+
+.icon-wait:before {
+    content: "\ea30";
+}
+
+.icon-xdown:before {
+    content: "\ea31";
+}
+
+.icon-xleft:before {
+    content: "\ea32";
+}
+
+.icon-xleft_all:before {
+    content: "\ea33";
+}
+
+.icon-xright:before {
+    content: "\ea34";
+}
+
+.icon-xright_alla:before {
+    content: "\ea35";
+}
+
+.icon-xup:before {
+    content: "\ea36";
+}
+
+.icon-Zombie_server_prompt:before {
+    content: "\ea37";
+}

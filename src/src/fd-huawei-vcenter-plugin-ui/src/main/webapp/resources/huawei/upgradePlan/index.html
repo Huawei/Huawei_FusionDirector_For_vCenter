@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>升级计划</title>
+    <link href="../../css/element.css" rel="stylesheet" />
+    <link href="../../css/style.css" rel="stylesheet" />
+    <script src="../../scripts/vue.js"></script>
+    <script src="../../scripts/element.js"></script>
+    <script src="../../scripts/jquery-3.2.1.min.js"></script>
+    <script src="../../scripts/i18n/zh-CN.js"></script>
+    <script src="../../scripts/i18n/en.js"></script>
+    <script src="../i18n/en.js"></script>
+    <script src="../i18n/zh-CN.js"></script>
+    <script src="../../scripts/polyfill.min.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../../scripts/web-platform.js"></script>
+    <script src="../js/errorCode.js"></script>
+    <script src="../../scripts/lodash.min.js"></script>
+    <script src="js/rest.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        body {
+            min-width: 900px;
+        }
+
+        /* 部署的下拉搜索框 */
+        .input-with-select {
+            display: inline-block;
+            position: relative;
+        }
+
+        .input-with-select .el-select .el-input {
+            width: 130px;
+        }
+
+        .demo-table-expand {
+            font-size: 0;
+        }
+
+        .demo-table-expand label {
+            width: 120px;
+            color: #99a9bf;
+        }
+
+        .demo-table-expand .el-form-item {
+            margin-right: 0;
+            margin-bottom: 0;
+            width: 50%;
+        }
+
+        .el-progress-bar {
+            padding-right: 60px;
+            margin-left: -20px;
+        }
+
+        .map-row {
+            padding: 15px;
+            background: #f6f7f8;
+            margin: 15px 0;
+        }
+
+        .search-row .el-button {
+            vertical-align: middle;
+        }
+
+        .search-row .el-input-group {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <!-- 顶部操作栏 -->
+        <el-row class="search-row">
+            <el-dropdown @command="commandClick">
+                <el-button>
+                    {{menuName}}
+                    <i class="el-icon-caret-bottom el-icon--right"></i>
+                </el-button>
+                <el-dropdown-menu slot="dropdown">
+                    <el-dropdown-item v-for="item in FDs" v-bind:command="item.name" v-bind:key="item.name">
+                        {{item.label}}</el-dropdown-item>
+                </el-dropdown-menu>
+            </el-dropdown>
+            <div class="input-with-select">
+                <el-input v-model.trim="keyword" clearable disabled>
+                    <el-button slot="append" icon="el-icon-search" disabled></el-button>
+                </el-input>
+            </div>
+            <el-button icon="plus" v-on:click="refreshTemplate()">{{i18ns.common.refresh}}</el-button>
+            <el-button icon="plus" v-on:click="batchDelete()" :disabled="this.multipleSelection<=0">
+                {{i18ns.common.delete}}</el-button>
+            <el-button icon="plus" v-on:click="addTemplate()">{{i18ns.upgradePlan.upgradePlan_creatUpgradePlan}}
+            </el-button>
+        </el-row>
+        <div>
+            <el-table v-bind:data="listData" border style="width:100%;" :empty-text="emptyText"
+                :element-loading-text="i18ns.common.loading" @selection-change="handleSelectionChange"
+                header-row-class-name="my_table_header">
+                <el-table-column type="expand">
+                    <template slot-scope="props">
+                        <p>{{i18ns.upgradePlan.upgradePlan_planDescription}}：{{props.row.Description}}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column type="selection" width="55" :selectable="checkboxT"></el-table-column>
+                <el-table-column prop="Name" :label="i18ns.upgradePlan.upgradePlan_planName">
+                    <template slot-scope="scope">
+                        <el-button type="text" size="small" @click="toDetail(scope.row)">{{scope.row.Name}}</el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="Status" :label="i18ns.upgradePlan.upgradePlan_status" sortable>
+                    <template slot-scope="scope">
+                        <span v-if="scope.row.Status=='Enable'">{{i18ns.upgradePlan.upgradePlan_alreadyStart}}</span>
+                        <span
+                            v-else-if="scope.row.Status=='Close'">{{i18ns.upgradePlan.upgradePlan_alreadyFinish}}</span>
+                        <span v-else-if="scope.row.Status=='Disable'">{{i18ns.upgradePlan.upgradePlan_notStart}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="ExecutionPolicy" :label="i18ns.upgradePlan.upgradePlan_executeType">
+                    <template slot-scope="scope">
+                        <span
+                            v-if="scope.row.ExecutionPolicy=='Immediate'">{{i18ns.upgradePlan.upgradePlan_immediateExecution}}</span>
+                        <span
+                            v-if="scope.row.ExecutionPolicy=='Period'">{{i18ns.upgradePlan.upgradePlan_cycleCheck}}</span>
+                        <span
+                            v-if="scope.row.ExecutionPolicy=='SpecifiedTime'">{{i18ns.upgradePlan.upgradePlan_specifiedTime}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="SpecifiedTime" :label="i18ns.upgradePlan.upgradePlan_executeDate">
+                    <template slot-scope="scope">
+                        <span v-if="scope.row.ExecutionPolicy=='Immediate'">--</span>
+                        <span
+                            v-if="scope.row.ExecutionPolicy=='Period'">{{i18ns.upgradePlan.upgradePlan_cycleCheckImmediateUpgrade}}</span>
+                        <span v-if="scope.row.ExecutionPolicy=='SpecifiedTime'">{{scope.row.SpecifiedTime}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="ModifiedTime" :label="i18ns.upgradePlan.upgradePlan_modifyTime" sortable>
+                </el-table-column>
+                <el-table-column :label="i18ns.common.operation">
+                    <template slot-scope="scope">
+                        <el-button type="text" size="small" :disabled="scope.row.Status=='Enable'"
+                            @click="deleteOne(scope.row)">{{i18ns.common.delete}}</el-button>
+                        <el-button type="text" size="small" :disabled="scope.row.Status=='Enable'"
+                            @click="editOne(scope.row)">{{i18ns.config.modify}}</el-button>
+                        <el-button type="text" size="small"
+                            v-if="scope.row.Status=='Disable'||scope.row.Status=='Close'"
+                            :disabled="scope.row.Status=='Close'" @click="startUpgradePlan(scope.row)">
+                            {{i18ns.upgradePlan.upgradePlan_start}}</el-button>
+                        <el-button type="text" size="small" v-if="scope.row.Status=='Enable'"
+                            :disabled="scope.row.Status=='Enable'&&scope.row.ExecutionPolicy=='Immediate'"
+                            @click="endUpgradePlan(scope.row)">{{i18ns.upgradePlan.upgradePlan_end}}</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-row class="pagination-row">
+                <el-col v-bind:span="24" style="text-align:left;">
+                    <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"
+                        v-bind:current-page="currentPage" v-bind:page-sizes="pageSizes" v-bind:page-size="pageSize"
+                        layout="total, sizes, prev, pager, next, jumper,slot" v-bind:total="total">
+                        <el-button style="border: 1px solid #c4c4c4;margin-left: 10px;" @click="toensurePage">{{i18ns.common.confirm}}
+                        </el-button>
+                    </el-pagination>
+                </el-col>
+            </el-row>
+            <!-- 删除 -->
+            <el-dialog :close-on-click-modal="false" :title="i18ns.common.prompt" :visible.sync="tipsDialogisible">
+                <el-row>
+                    <el-alert :title="i18ns.common.confirmDelete" type="warning"
+                        :description="i18ns.common.confirmDelete4" show-icon :closable="false">
+                    </el-alert>
+                </el-row>
+                <el-table :data="deleteList" border style="width: 100%; margin-top: 10px;"
+                    header-row-class-name="my_table_header">
+                    <el-table-column prop="Name" :label="i18ns.upgradePlan.upgradePlan_planName"></el-table-column>
+                    <el-table-column prop="Status" :label="i18ns.upgradePlan.upgradePlan_status" sortable>
+                        <template slot-scope="scope">
+                            <span
+                                v-if="scope.row.Status=='Enable'">{{i18ns.upgradePlan.upgradePlan_alreadyStart}}</span>
+                            <span
+                                v-else-if="scope.row.Status=='Close'">{{i18ns.upgradePlan.upgradePlan_alreadyFinish}}</span>
+                            <span
+                                v-else-if="scope.row.Status=='Disable'">{{i18ns.upgradePlan.upgradePlan_notStart}}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="ExecutionPolicy" :label="i18ns.upgradePlan.upgradePlan_executeType">
+                        <template slot-scope="scope">
+                            <span
+                                v-if="scope.row.ExecutionPolicy=='Immediate'">{{i18ns.upgradePlan.upgradePlan_immediateExecution}}</span>
+                            <span
+                                v-if="scope.row.ExecutionPolicy=='Period'">{{i18ns.upgradePlan.upgradePlan_cycleCheck}}</span>
+                            <span
+                                v-if="scope.row.ExecutionPolicy=='SpecifiedTime'">{{i18ns.upgradePlan.upgradePlan_specifiedTime}}</span>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="tipsDialogisible=false">{{i18ns.common.cancel}}</el-button>
+                    <el-button @click="deleteConfig" v-loading.fullscreen.lock="fullscreenLoading"
+                        v-show="deleteList.length>0" :element-loading-text="i18ns.common.loading" type="primary">
+                        {{i18ns.common.confirm}}</el-button>
+                </div>
+            </el-dialog>
+        </div>
+    </div>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                i18ns: [],
+                FDs: [],
+                FDIp: '',
+                menuName: '',
+                menuKey: '',
+                listData: [],
+                profileId: '', //配置ID
+                /*显示表格数据加载中*/
+                loading: false,
+                /*删除操作遮罩*/
+                fullscreenLoading: false,
+                currentPage: 1,
+                pageSizes: [10, 20, 50, 100],
+                pageSize: 10,
+                total: 0,
+                multipleSelection: [],
+
+                deviceListSelection: [],
+                tipsDialogisible: false,
+
+                deleteList: [], //要删除的数据
+                keyword: '',
+                search: {
+
+                },
+                emptyText: ''
+            },
+            created: function () {
+                this.i18ns = getIn18();
+                this.emptyText = this.i18ns.common.loading;
+                var _pageSize = localStorage.getItem("imageListPageSize");
+                if (_pageSize) {
+                    this.pageSize = parseInt(_pageSize);
+                };
+            },
+            mounted: function () {
+                var that = this;
+                //获取FD列表数据
+                setTimeout(function () {
+                    getFDList(that.bindFD);
+                }, 0);
+                //输入框键盘事件监听
+                $('.is-in-pagination .el-input__inner').bind('keydown',function(event){
+                    if(event.keyCode == "13") {
+                        var value = parseInt(this.value);
+                        that.handleCurrentChange(value);
+                    }
+                });
+            },
+            methods: {
+                toensurePage:function(){
+                    var value = parseInt($('.is-in-pagination .el-input__inner').val());
+                    this.handleCurrentChange(value);
+                },
+                /**
+                 * 跳转到默认添加配置页面
+                 * 
+                 */
+                addTemplate: function () {
+                    window.location.href = './create.html';
+                },
+
+                /**
+                 * 获取FD数据 回调函数
+                 * 
+                 * @param {any} ret 
+                 */
+                bindFD: function (ret) {
+                    if (ret.code === '0') {
+                        var lg = ret.data.length;
+                        if (lg > 0) {
+                            for (var i = 0; i <
+                                lg; i++) {
+                                if (ret.data[i].aliasName) {
+                                    this.FDs.push({
+                                        label: ret.data[i].aliasName,
+                                        name: ret.data[i].hostIp
+                                    });
+                                } else {
+                                    this.FDs.push({
+                                        label: ret.data[i].hostIp,
+                                        name: ret.data[i].hostIp
+                                    });
+                                }
+                            }
+                            var currentFD = getCurrentFD();
+                            if (currentFD) {
+                                var _currentFD = _.find(this.FDs, {
+                                    name: currentFD
+                                })
+                                if (_currentFD) {
+                                    this.FDIp = currentFD;
+                                    this.menuName = _currentFD.label; /*设置选项卡下拉框默认选中项*/
+                                    this.menuKey = _currentFD.name; /*设置选项卡下拉框默认选中项*/
+                                } else {
+                                    setCurrentFD(ret.data[0].hostIp);
+                                    this.FDIp = ret.data[0].hostIp;
+                                    this.menuName = this.FDs[0].label; /*设置选项卡下拉框默认选中项*/
+                                    this.menuKey = this.FDs[0].name; /*设置选项卡下拉框默认选中项*/
+                                }
+                            } else {
+                                setCurrentFD(ret.data[0].hostIp);
+                                this.FDIp = ret.data[0].hostIp;
+                                this.menuName = this.FDs[0].label; /*设置选项卡下拉框默认选中项*/
+                                this.menuKey = this.FDs[0].name; /*设置选项卡下拉框默认选中项*/
+                            }
+                            this.emptyText = this.i18ns.common.loading;
+                            this.getListData(); /*获取列表数据*/
+                        } else {
+                            alertMsg(getErrorMsg({
+                                code: '-90002'
+                            }))
+                        }
+                    } else {
+                        if (ret.ip != app.FDIp) {
+                            return false
+                        }
+                        var msg = getErrorMsg(ret);
+                        alertMsg(msg);
+                    }
+                },
+
+                /**
+                 * FD下拉框 点击切换事件
+                 * 
+                 * @param {any} command 
+                 * @param {any} com 
+                 */
+                commandClick: function (command, com) {
+                    this.menuName = com.$el.innerText;
+                    this.menuKey = command;
+                    this.FDIp = command;
+                    setCurrentFD(command);
+                    this.currentPage = 1;
+                    this.pageSize = 10;
+                    this.total = 0;
+                    this.getListData();
+                },
+
+
+                /**
+                 * 设备列表全选事件
+                 * 
+                 * @param {any} val 
+                 */
+                deviceListSelectionChange: function (val) {
+                    console.log(val);
+                    this.deviceListSelection = val;
+                },
+
+                /**
+                 * 删除一条部署
+                 * 
+                 * @param {object} row 
+                 */
+                deleteOne: function (row) {
+                    if (row.deviceCount > 0) {
+                        alertMsg(this.i18ns.config.delFailedMsg);
+                        return;
+                    }
+                    this.deleteList = [];
+                    this.tipsDialogisible = true;
+                    this.deleteList.push(row);
+                },
+
+                /**
+                 * 获取升级计划的列表
+                 */
+                getListData: function () {
+                    this.listData = [];
+                    this.emptyText = this.i18ns.common.loading;
+                    upgradePackageManage.getUpgradePlans({
+                        ip: this.FDIp,
+                        "pageNo": this.currentPage,
+                        "pageSize": this.pageSize
+                    }, this.bindList);
+                },
+                /**
+                 * 获取升级计划列表数据 回调函数
+                 * 
+                 * @param {any} ret 
+                 */
+                bindList: function (ret) {
+                    this.listData = [];
+                    setTimeout(function () {
+                        this.emptyText = app.i18ns.common.noData;
+                    }, intervalTime); //延迟半秒在关闭loading
+                    if (ret.code === '0') {
+                        this.imageObj = ret.data[0].data;
+                        this.num = ((this.imageObj.PoolUsedCap / this.imageObj.PoolMaxCap) * 100).toFixed(
+                            2);
+                        this.listData = ret.data[0].data.Members;
+                        this.total = ret.data[0].data['Members@odata.count'];
+                    } else {
+                        if (ret.ip != app.FDIp) {
+                            return false
+                        }
+                        var msg = getErrorMsg(ret);
+                        alertMsg(msg);
+                    }
+                },
+
+
+                /**
+                 * 设置当前显示数据的总数
+                 * 
+                 * @param {any} val 
+                 */
+                handleSizeChange: function (val) {
+                    this.pageSize = val;
+                    this.currentPage = 1;
+                    localStorage.setItem("imageListPageSize", val);
+                    this.getListData();
+                },
+                /**
+                 * 切换当前显示页
+                 * 
+                 * @param {any} val 
+                 */
+                handleCurrentChange: function (val) {
+                    this.currentPage = val;
+                    this.getListData();
+                },
+                /**
+                 * 全选事件
+                 * 
+                 * @param {any} val 
+                 */
+                handleSelectionChange: function (val) {
+                    this.multipleSelection = val;
+                },
+                /**
+                 * 批量删除事件
+                 * 
+                 * @returns 
+                 */
+                batchDelete: function () {
+                    if (this.multipleSelection.length === 0) {
+                        return false;
+                    }
+                    this.deleteList = [];
+                    this.tipsDialogisible = true;
+                    this.deleteList = this.multipleSelection
+                },
+
+                /**
+                 * 确认删除
+                 */
+                deleteConfig: function () {
+                    this.fullscreenLoading = true;
+                    if (app.listData.length - this.deleteList.length <= 0 && app.currentPage > 1) {
+                        app.currentPage = app.currentPage - 1;
+                    }
+                    for (var i = 0; i < this.deleteList.length; i++) {
+                        var param = {
+                            ip: this.FDIp,
+                            id: this.deleteList[i].ID
+                        };
+                        upgradePackageManage.deleteUpgradePlanById(param, function (ret) {
+                            setTimeout(function () {
+                                app.fullscreenLoading = false;
+                            }, intervalTime); //延迟半秒在关闭loading
+                            if (ret.code == '0') {
+                                app.tipsDialogisible = false;
+                                app.getListData();
+                            } else {
+                                if (ret.ip != app.FDIp) {
+                                    return false
+                                }
+                                var msg = getErrorMsg(ret);
+                                alertMsg(msg);
+                            }
+                        })
+                    }
+                },
+                /**
+                 * 搜索
+                 */
+                searchOs: function () {
+                    if (!this.keyword) {
+                        notifyError(this.i18ns.OSDeploy.deploy_enterSearchContent);
+                        return;
+                    }
+                    this.search[this.types] = this.keyword;
+                },
+                /**
+                 * 刷新
+                 */
+                refreshTemplate: function (row) {
+                    this.search[this.types] = "";
+                    this.keyword = "";
+                    this.getListData()
+                },
+
+                /**
+                 * 跳转到修改
+                 */
+                editOne: function (row) {
+                    window.location.href = './edit.html?id=' + row.ID;
+                },
+                /**
+                 * 禁用复选框
+                 */
+                checkboxT: function (row, index) {
+                    if (row.Status === 'Enable') {
+                        return 0;
+                    } else {
+                        return 1;
+                    }
+                },
+                /**
+                 * 启用
+                 */
+                startUpgradePlan: function (row) {
+                    var tips = app.i18ns.upgradePlan.upgradePlan_confirmStartUpgradePlan
+                        .format(row.Name)
+                    this.$confirm(tips + '<br /><span style="color:#999;">' + app.i18ns.upgradePlan
+                        .upgradePlan_timeTip +
+                        '</span>',
+                        app.i18ns
+                        .common.warn, {
+                            dangerouslyUseHTMLString: true,
+                            confirmButtonText: app.i18ns.common.confirm,
+                            cancelButtonText: app.i18ns.common.cancel,
+                            closeOnClickModal: false,
+                            type: 'warning'
+                        }).then(function () {
+                        var param = {
+                            ip: app.FDIp,
+                            id: row.ID,
+                            data: {
+                                State: "Enable"
+                            }
+                        };
+                        upgradePackageManage.unEnable(param, function (ret) {
+                            if (ret.code == '0') {
+                                app.getListData();
+                            } else {
+                                if (ret.ip != app.FDIp) {
+                                    return false
+                                }
+                                var msg = getErrorMsg(ret);
+                                alertMsg(msg);
+                            }
+                        })
+                    }).catch(function () {})
+                },
+
+                /**
+                 * 停用
+                 */
+                endUpgradePlan: function (row) {
+                    var tips = app.i18ns.upgradePlan.upgradePlan_confirmCloseUpgradePlan
+                        .format(row.Name)
+                    this.$confirm(tips + '<br /><span style="color:#999;">' + app.i18ns.upgradePlan
+                        .upgradePlan_planCloseTip +
+                        '</span>', app.i18ns
+                        .common.warn, {
+                            dangerouslyUseHTMLString: true,
+                            confirmButtonText: app.i18ns.common.confirm,
+                            cancelButtonText: app.i18ns.common.cancel,
+                            closeOnClickModal: false,
+                            type: 'warning'
+                        }).then(function () {
+                        var param = {
+                            ip: app.FDIp,
+                            id: row.ID,
+                            data: {
+                                State: "Disable"
+                            }
+                        };
+                        upgradePackageManage.unEnable(param, function (ret) {
+                            if (ret.code == '0') {
+                                app.getListData();
+                            } else {
+                                if (ret.ip != app.FDIp) {
+                                    return false
+                                }
+                                var msg = getErrorMsg(ret);
+                                alertMsg(msg);
+                            }
+                        })
+                    }).catch(function () {})
+                },
+                /**
+                 * 查看详情
+                 */
+                toDetail: function (row) {
+                    window.location.href = './detail.html?id=' + row.ID;
+                },
+
+
+            }
+        });
+    </script>
+</body>
+
+</html>

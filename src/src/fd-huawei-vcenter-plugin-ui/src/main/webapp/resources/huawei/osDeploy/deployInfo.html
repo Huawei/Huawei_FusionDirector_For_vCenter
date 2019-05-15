@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>部署信息</title>
+    <link href="../../css/element.css" rel="stylesheet" />
+    <link href="../../css/style.css" rel="stylesheet" />
+    <script src="../../scripts/vue.js"></script>
+    <script src="../../scripts/element.js"></script>
+    <script src="../../scripts/jquery-3.2.1.min.js"></script>
+    <script src="../../scripts/i18n/zh-CN.js"></script>
+    <script src="../../scripts/i18n/en.js"></script>
+    <script src="../i18n/en.js"></script>
+    <script src="../i18n/zh-CN.js"></script>
+    <script src="../../scripts/polyfill.min.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../../scripts/web-platform.js"></script>
+    <script src="../js/errorCode.js"></script>
+    <script src="../../scripts/lodash.min.js"></script>
+    <script src="../../scripts/Chart.bundle.min.js"></script>
+    <script src="js/rest.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        body {
+            min-width: 900px;
+        }
+        .deployContent{
+            padding: 20px;
+        }
+        .optionGroup{
+            float: right;
+            position: relative;
+        }
+        .infoTitle{
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .deployinfo {
+            border-collapse: collapse;
+            width: 95%;
+            table-layout:fixed;
+        }
+        .deployinfo tr td {
+            height: 30px;
+            padding-left: 5px;
+        }
+        .dashBorder{
+            width: 100%;
+            height: 1px;
+            border-bottom: #dddddd 1px dashed;
+            margin-bottom: 25px;
+            margin-top: 25px;
+        }
+        p{
+            margin: 8px 0;
+            padding-left: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <el-row v-loading.fullscreen.lock="fullscreenLoading " :element-loading-text="i18ns.common.loading">
+            <div class="deployContent">
+                <el-dropdown type="primary" class="optionGroup" @command="handleOption">
+                    <el-button type="primary">
+                        {{i18ns.common.operation}}<i class="el-icon-arrow-down el-icon--right"></i>
+                    </el-button>
+                    <el-dropdown-menu slot="dropdown">
+                        <el-dropdown-item command="del">{{i18ns.common.delete}}</el-dropdown-item>
+                        <el-dropdown-item command="edit">{{i18ns.config.modify}}</el-dropdown-item>
+                        <el-dropdown-item command="deploy">{{i18ns.OSDeploy.deploy_name}}</el-dropdown-item>
+                    </el-dropdown-menu>
+                </el-dropdown>
+                <div>
+                    <span class="infoTitle">{{i18ns.OSDeploy.deploy_basicInfo}}</span>
+                    <el-row>
+                        <table class="deployinfo">
+                            <tr>
+                                <td>{{i18ns.OSDeploy.OSDeploy_imageModelNameColon}}</td>
+                                <td>{{deployInfo.Name}}</td>
+                                <td>{{i18ns.OSDeploy.deploy_descriptionColon}}</td>
+                                <td style="word-break: break-all">{{deployInfo.Description}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{i18ns.OSDeploy.OSDeploy_modelTypeColon}}</td>
+                                <td>
+                                    <span v-if="deployInfo.ModelType=='Standard'">{{i18ns.OSDeploy.deploy_standard}}</span>
+                                    <span v-else-if="deployInfo.ModelType=='Clone'">{{i18ns.OSDeploy.deploy_clone}}</span>
+                                </td>
+                                <td>{{i18ns.OSDeploy.deploy_statusColon}}</td>
+                                <td>
+                                    <span v-if="deployInfo.Status=='Available'">{{i18ns.OSDeploy.deploy_available}}</span>
+                                    <span v-else-if="deployInfo.Status=='Using'">{{i18ns.OSDeploy.deploy_using}}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>{{i18ns.OSDeploy.deploy_updateTimeColon}}</td>
+                                <td>{{deployInfo.ModifyTime}}</td>
+                                <td>{{i18ns.OSDeploy.deploy_createTimeColon}}</td>
+                                <td>{{deployInfo.CreateTime}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{i18ns.OSDeploy.deploy_imageFileName}}</td>
+                                <td>{{deployInfo.ImageName}}</td>
+                            </tr>
+                        </table>
+                    </el-row>
+                </div>
+                <div class="dashBorder"></div>
+                <div style="width:95%">
+                    <span class="infoTitle">{{i18ns.OSDeploy.deploy_installInfo}}</span>
+                    <el-row>
+                        <el-col :span="6" v-if="deployInfo.ImageType=='Windows'">
+                            <p>{{i18ns.OSDeploy.deploy_installCDKey}}</p>
+                        </el-col>
+                        <el-col :span="6" v-if="deployInfo.ImageType=='Windows'">
+                            <p>{{deployInfo.Cdkey?deployInfo.Cdkey:'--'}}</p>
+                        </el-col>
+                        <el-col :span="6" v-if="deployInfo.ImageType=='Windows'">
+                            <p>{{i18ns.OSDeploy.deploy_cpFirstNameWin}}</p>
+                        </el-col>
+                        <el-col :span="6" v-if="deployInfo.ImageType=='Windows'">
+                            <p>{{deployInfo.PreHostName?deployInfo.PreHostName:'--'}}</p>
+                        </el-col>
+                        <el-col :span="6" v-if="deployInfo.ImageType!='Windows'&&deployInfo.ImageType!='VMware'">
+                            <p>{{i18ns.OSDeploy.deploy_cpFirstNameLinux}}</p>
+                        </el-col>
+                        <el-col :span="6" v-if="deployInfo.ImageType!='Windows'&&deployInfo.ImageType!='VMware'">
+                            <p>localhost</p>
+                        </el-col>
+                        <el-col :span="6">
+                            <p>{{i18ns.OSDeploy.deploy_installPlacePartition}}</p>
+                        </el-col>
+                        <el-col :span="6">
+                            <p v-if="deployInfo.AutoPart">{{i18ns.OSDeploy.deploy_autoPartition}}</p>
+                            <p v-else="deployInfo.AutoPart">{{i18ns.OSDeploy.deploy_definedPartition}}</p>
+                        </el-col>
+                        <el-col :span="6">
+                            <p>{{i18ns.OSDeploy.deploy_OSLanguage}}</p>
+                        </el-col>
+                        <el-col :span="6">
+                            <p v-if="deployInfo.ImageType=='VMware'">{{i18ns.OSDeploy.deploy_vmDefault}}</p>
+                            <p v-else>{{deployInfo.OsLanguage}}</p>
+                        </el-col>
+                        <el-col :span="6">
+                            <p>{{i18ns.OSDeploy.deploy_keyBoard}}</p>
+                        </el-col>
+                        <el-col :span="6">
+                            <p v-if="deployInfo.ImageType=='VMware'">{{i18ns.OSDeploy.deploy_vmDefault}}</p>
+                            <p v-else>{{deployInfo.KeyBoard}}</p>
+                        </el-col>
+                        <el-col :span="6">
+                            <p>{{i18ns.OSDeploy.deploy_timeZone}}</p>
+                        </el-col>
+                        <el-col :span="6">
+                            <p v-if="deployInfo.ImageType=='VMware'">{{i18ns.OSDeploy.deploy_vmDefault}}</p>
+                            <p v-else>{{deployInfo.Timezone}}</p>
+                        </el-col>
+                    </el-row>
+                </div>
+            </div>
+        </el-row>
+        <el-row>
+            <!-- 返回按钮 -->
+            <el-button style="margin-top:10px;" @click="back">{{i18ns.common.back}}</el-button>
+        </el-row>
+    </div>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                i18ns: [],
+                FDs: [],
+                FDIp: '',
+                deployId: '',
+                loading: false,
+                fullscreenLoading: false,
+                deployInfo: {},
+
+            },
+            computed: {
+
+            },
+            created: function () {
+                this.i18ns = getIn18();
+                this.FDIp = getCurrentFD();
+                this.deployId = getQueryString('id');
+            },
+            mounted: function () {
+                Vue.nextTick(function () {
+                    app.getDeployInfo();
+                })
+            },
+            methods: {
+
+                /**
+                 *  返回按钮方法 
+                 * **/
+                back: function () {
+                    window.location.href = '../osDeploy/index.html?s=' + Math.random();
+                },
+                /**
+                 * 获取部署详情
+                 */
+                getDeployInfo: function () {
+                    var param = {
+                        ip: this.FDIp,
+                        id: this.deployId
+                    };
+                    serverprofileManage.getModelsQuery(param, function (ret) {
+                        if (ret.code == '0') {
+                            app.deployInfo = ret.data[0].data;
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                        }
+                    })
+                },
+                //操作
+                handleOption: function (command) {
+                    if (command == 'del') {
+                        this.deleteConfig();
+                    } else if (command == 'edit') {
+                        window.location.href = '../osDeploy/editDeploy.html?id=' + this.deployId;
+                    } else if (command == 'deploy') {
+                        window.location.href = '../osDeploy/deploy.html?id=' + this.deployId;
+                    }
+                },
+                /**
+                 * 删除操作
+                 */
+                deleteConfig: function () {
+                    var param = {
+                        ip: this.FDIp,
+                        id: this.deployId
+                    };
+                    serverprofileManage.deleteConfig(param, function (ret) {
+                        if (ret.code == '0') {
+                            window.location.href = '../osDeploy/index.html?s=' + Math.random();
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                            /*   alertMsg(getErrorMsg({
+                                  code: 'os.20003'
+                              })); */
+                        }
+                    })
+                },
+
+            }
+        });
+    </script>
+</body>
+
+</html>

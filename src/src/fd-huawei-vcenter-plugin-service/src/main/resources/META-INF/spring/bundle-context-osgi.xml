@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:osgi="http://www.springframework.org/schema/osgi"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                      http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd">
+
+  <!-- definitions using elements of the osgi namespace can be included
+     in this file. There is no requirement to keep these definitions
+     in a separate file if you do not want to. The rationale for
+     keeping these definitions separate is to facilitate integration
+     testing of the bundle outside of an OSGi container -->
+
+  <!-- Services defined by this module   -->
+
+  <osgi:service id="SessionService" ref="sessionService"
+    interface="com.huawei.fdvcenterpluginui.services.SessionService"/>
+
+  <osgi:service id="FdHostService" ref="fdHostService"
+    interface="com.huawei.fdvcenterpluginui.services.FDHostService"/>
+
+  <osgi:service id="FDSettingService" ref="fdSettingService"
+    interface="com.huawei.fdvcenterpluginui.services.FDSettingService"/>
+
+  <osgi:service id="FDAlarmService" ref="fdAlarmService"
+    interface="com.huawei.fdvcenterpluginui.services.FDAlarmService"/>
+
+  <osgi:service id="FDSyncService" ref="fdSyncService"
+    interface="com.huawei.fdvcenterpluginui.services.FDSyncService"/>
+
+  <osgi:reference id="userSessionService"
+    interface="com.vmware.vise.usersession.UserSessionService"/>
+
+</beans>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>查看计划</title>
+    <link href="../../css/element.css" rel="stylesheet" />
+    <link href="../../css/style.css" rel="stylesheet" />
+    <script src="../../scripts/vue.js"></script>
+    <script src="../../scripts/element.js"></script>
+    <script src="../../scripts/jquery-3.2.1.min.js"></script>
+    <script src="../../scripts/i18n/zh-CN.js"></script>
+    <script src="../../scripts/i18n/en.js"></script>
+    <script src="../i18n/en.js"></script>
+    <script src="../i18n/zh-CN.js"></script>
+    <script src="../../scripts/polyfill.min.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../../scripts/web-platform.js"></script>
+    <script src="../js/errorCode.js"></script>
+    <script src="../js/taskMessage.js"></script>
+    <script src="../../scripts/lodash.min.js"></script>
+    <script src="js/rest.js"></script>
+    <script src="js/partial.js"></script>
+    <script src="js/deviceInfo.js"></script>
+    <script src="js/serverTable.js"></script>
+    <script src="js/managerTable.js"></script>
+    <script src="js/switchTable.js"></script>
+    <script src="js/fanTable.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        body {
+            min-width: 900px;
+        }
+
+        .serviceTit {
+            display: inline-block;
+            height: 30px;
+            line-height: 30px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .serviceTit i {
+            width: 5px;
+            height: 100%;
+            background: #409eff;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .mt20 {
+            margin: 20px 0;
+        }
+
+        .upgradePlan_importAddDevice {
+            overflow: hidden;
+            height: auto;
+            width: 100%;
+            background: #f6f7f8;
+            padding: 30px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        .itemUpgrade {
+            margin: 20px 40px 30px 30px;
+            padding: 10px;
+            width: 180px;
+            height: 110px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #fff;
+            float: left;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .upgradePlan_importAddDevice .optionIcon {
+            display: none;
+        }
+
+        .upgradePlan_importAddDevice .optionIcon i {
+            font-size: 18px;
+        }
+
+        .rightImg {
+            position: absolute;
+            top: 25px;
+            right: -60px;
+        }
+
+        .row-expand-cover .el-table__expand-column .el-icon {
+            visibility: hidden;
+        }
+
+        .hide-padding+tr .el-table__expanded-cell {
+            padding: 0;
+            padding-left: 105px;
+            border: none;
+        }
+        .detailDevice .hide-padding+tr .el-table__expanded-cell {
+            padding: 0;
+            padding-left: 46px;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <el-row v-loading.fullscreen.lock="fullscreenLoading" :element-loading-text="i18ns.common.loading">
+            <el-form :model="planInfo" label-suffix=":" label-width="180px" label-position="left">
+                <h3>{{i18ns.upgradePlan.upgradePlan_information}}</h3>
+                <el-form-item label="Fusion Director ">
+                    {{FDIp}}
+                </el-form-item>
+                <el-form-item :label="i18ns.upgradePlan.upgradePlan_planName">
+                    {{planInfo.Name}}
+                </el-form-item>
+                <el-form-item :label="i18ns.upgradePlan.upgradePlan_planDescription">
+                    {{planInfo.Description}}
+                </el-form-item>
+                <el-form-item :label="i18ns.upgradePlan.upgradePlan_upgradePlanStatus">
+                    {{getStatusTxt(planInfo.Status)}}
+                </el-form-item>
+                <!-- 版本信息 -->
+                <h3>{{i18ns.upgradePlan.upgradePlan_versionInformation}}</h3>
+                <el-row>
+                    <el-table :data="versionList" border header-row-class-name="my_table_header" ref="versionListTable" :empty-text="emptyText">
+                        <el-table-column prop="PackageName"
+                            :label="i18ns.upgradePackageWarehouse.versionWarehouse_upgradeName" min-width="120"
+                            :show-overflow-tooltip="true"></el-table-column>
+                        <el-table-column prop="ProductType"
+                            :label="i18ns.upgradePackageWarehouse.versionWarehouse_productType">
+                            <template slot-scope="scope">
+                                {{planInfo.VersionType=='UpgradePackage'?scope.row.ProductType:scope.row.SupportModel}}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="Version" :label="i18ns.upgradePackageWarehouse.versionWarehouse_version">
+                            <template slot-scope="scope">
+                                <p v-for="vis in scope.row.Version">
+                                    <span v-if="vis.Selected">{{vis.Module}}：{{vis.CurrentVer}}</span>
+                                </p>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="Size" :label="i18ns.upgradePackageWarehouse.versionWarehouse_size">
+                            <template slot-scope="scope">
+                                {{unitFun(scope.row.Size)}}
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                    <p style="text-align:right;padding:0 20px;" v-if="versionList.length>0">
+                        {{i18ns.common.common_totalNumber}}{{versionList.length}}</p>
+                </el-row>
+
+                <!-- 设备信息 -->
+                <div v-show="taskStatu">
+                    <h3>{{i18ns.upgradePlan.upgradePlan_deviceInfomation}}</h3>
+                    <!-- 组信息 -->
+                    <div v-show="isShowGroup">
+                        <span class="serviceTit"><i></i>{{i18ns.upgradePlan.upgradePlan_groupSelectTip}}</span>
+                        <el-row>
+                            <el-table v-bind:data="groupList" border header-row-class-name="my_table_header" :empty-text="emptyText">
+                                <el-table-column prop="Name" :label="i18ns.upgradePlan.upgradePlan_name">
+                                    <template slot-scope="scope">
+                                        <el-button type="text" @click="showGroupDetil(scope.row.Name)">
+                                            {{scope.row.Name}}</el-button>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="Description"
+                                    :label="i18ns.upgradePlan.upgradePlan_descriptionTip">
+                                    <template slot-scope="scope">
+                                        {{scope.row.Description?scope.row.Description:'--'}}
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <p style="text-align:right;padding:0 20px;" v-if="groupList.length>0">
+                                {{i18ns.common.common_totalNumber}}{{groupList.length}}</p>
+                        </el-row>
+                    </div>
+                    <!-- 设备信息 -->
+                    <div v-show="isShowDevices" class="mt20">
+                        <span class="serviceTit"><i></i>{{i18ns.upgradePlan.upgradePlan_deviceSelectTitle}}</span>
+                        <el-row>
+                            <el-table v-bind:data="deviceList" border header-row-class-name="my_table_header" :empty-text="emptyText">
+                                <el-table-column prop="BMCIP" :label="i18ns.upgradePlan.upgradePlan_BMCEMIP">
+                                    <template slot-scope="scope">
+                                        <el-button type="text" @click="detailsDeviceInfo(scope.row)">{{scope.row.BMCIP||scope.row.HostName}}
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="Name" :label="i18ns.upgradePlan.upgradePlan_name">
+                                    <template slot-scope="scope">
+                                        {{scope.row.Name?scope.row.Name:'--'}}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="SerialNumber"
+                                    :label="i18ns.upgradePlan.upgradePlan_serialNumber"></el-table-column>
+                                <el-table-column prop="ProductType" :label="i18ns.upgradePlan.upgradePlan_productType">
+                                </el-table-column>
+                                <el-table-column prop="Groups" :label="i18ns.upgradePlan.upgradePlan_group">
+                                    <template slot-scope="scope">
+                                        <span>{{getGroupTxt(scope.row.Groups)}}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="AssetTag" :label="i18ns.upgradePlan.upgradePlan_assetLabel">
+                                    <template slot-scope="scope">
+                                        {{scope.row.AssetTag?scope.row.AssetTag:'--'}}
+                                    </template>
+                                </el-table-column>
+
+                            </el-table>
+                            <p style="text-align:right;padding:0 20px;" v-if="deviceList.length>0">
+                                {{i18ns.common.common_totalNumber}}{{deviceList.length}}</p>
+                        </el-row>
+                    </div>
+                    <!-- 分批升级 -->
+                    <div v-if="upgradeSwitch">
+                        <p><span class="serviceTit"><i></i>{{i18ns.upgradePlan.upgradePlan_importUpgrade}}</span></p>
+                        <!-- 分批升级的设备 -->
+                        <div class="upgradePlan_importAddDevice">
+                            <partial :batch-device="batchDevice"></partial>
+                        </div>
+                        <p>{{i18ns.upgradePlan.upgradePlan_upgradeDeviceCounts}}：{{allDeviceNum}}</p>
+                        <p>{{i18ns.upgradePlan.upgradePlan_upgradeDeviceTeam}}：{{batchDevice.length}}</p>
+                    </div>
+                </div>
+
+                <!-- 升级策略 -->
+                <h3>{{i18ns.upgradePlan.upgradePlan_upgradePolicy}}</h3>
+                <el-form-item :label="i18ns.upgradePlan.upgradePlan_executionPolicy">
+                    {{getExecutionPolicyTxt(planInfo.ExecutionPolicy)}}
+                </el-form-item>
+                <el-form-item :label="i18ns.upgradePlan.upgradePlan_effectPolicy">
+                    {{getEffectStatusTxt(planInfo.ResetImmediately)}}
+                </el-form-item>
+            </el-form>
+        </el-row>
+        <!-- 设备组的单个详情 -->
+        <el-dialog :close-on-click-modal="false" :title="groupItemTit" :visible.sync="groupDialog" width="80%">
+            <el-row>
+                <p><i class="el-icon-info"
+                        style="color:#409eff;font-style:normal;"></i>{{i18ns.upgradePlan.upgradePlan_filterDevice}}</p>
+            </el-row>
+            <el-table :data="groupItem" border style="width: 100%; margin-top: 10px;" :empty-text="emptyText"
+                header-row-class-name="my_table_header">
+                <el-table-column prop="IPv4Address.Address" :label="i18ns.upgradePlan.upgradePlan_BMCIP">
+                    <template slot-scope="scope">
+                        <el-button type="text" @click="detailsInfo(scope.row)">{{scope.row.IPv4Address.Address}}
+                        </el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="SerialNumber" :label="i18ns.upgradePlan.upgradePlan_serialNumber">
+                    <template slot-scope="scope">
+                        {{scope.row.SerialNumber?scope.row.SerialNumber:'--'}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="Model" :label="i18ns.upgradePlan.upgradePlan_productType">
+                    <template slot-scope="scope">
+                        {{scope.row.Model?scope.row.Model:'--'}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="Group" :label="i18ns.upgradePlan.upgradePlan_group">
+                    <template slot-scope="scope">
+                        {{getGroupTxt(scope.row.Group)}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="Tag" :label="i18ns.upgradePlan.upgradePlan_label">
+                    <template slot-scope="scope">
+                        {{scope.row.Tag?scope.row.Tag:'--'}}
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-dialog>
+        <!-- 设备的详情 -->
+        <device-info :device-info="deviceInfo" :device-item-tit="deviceItemTit" ref="deviceInfoDialog"></device-info>
+        <!-- 精准升级设备的详情 -->
+        <el-dialog :close-on-click-modal="false" :title="deviceTit" custom-class="detailDevice" :visible.sync="preciseDetailDialog" width="80%">
+            <el-tabs v-model="activeDetail" type="card" @tab-click="handleClick">
+                <el-tab-pane :label="i18ns.common.server" name="Server">
+                    <server-table ref="serverData" :f-d-ip="FDIp" :is-check="isCheckDetail" :server-data="serverData" ></server-table>
+                </el-tab-pane>
+                <el-tab-pane :label="i18ns.deviceVersionStatus.deviceVersionStatus_management" name="Manager">
+                    <manager-table ref="managerData" :f-d-ip="FDIp" :is-check="isCheckDetail" :manager-data="managerData"></manager-table>
+                </el-tab-pane>
+                <el-tab-pane :label="i18ns.deviceVersionStatus.deviceVersionStatus_switch" name="Switch">
+                    <switch-table ref="switchData" :f-d-ip="FDIp" :is-check="isCheckDetail" :switch-data="switchData"></switch-table>
+                </el-tab-pane>
+                <el-tab-pane :label="i18ns.deviceVersionStatus.deviceVersionStatus_fanOrOther" name="Fan">
+                    <fan-table ref="fanData" :f-d-ip="FDIp" :is-check="isCheckDetail" :fan-data="fanData"></fan-table>
+                </el-tab-pane>
+            </el-tabs>
+        </el-dialog>
+        <el-row>
+            <!-- 底部按钮 -->
+            <el-button style="margin-top:10px;" @click="back">{{i18ns.common.back}}</el-button>
+        </el-row>
+    </div>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                i18ns: [],
+                FDIp: '',
+                fullscreenLoading: false,
+                ID: '',
+                planInfo: {},
+                versionList: [],
+                allGroups: [],
+                groupIds: [],
+                deviceList: [],
+                isShowDevices: false,
+                taskStatu: false,
+                isShowGroup: false,
+                groupItem: [],
+                groupItemTit: '',
+                groupDialog: false,
+
+                upgradeSwitch: false,
+                groupDevices: [],
+                batchDevice: [{
+                    list: []
+                }],
+                allDeviceNum: 0,
+                //设备的详情
+                deviceInfo: [],
+                deviceItemTit: '',
+                //精准升级
+                
+                serverData:[],
+                managerData:[],
+                switchData:[],
+                fanData:[],
+                // 精准升级的详情
+                preciseDetailDialog:false,
+                deviceTit:'',
+                activeDetail:'Server',
+                isCheckDetail:false,
+                emptyText: '',
+            },
+            computed: {
+                groupList: function () {
+                    var arr = [];
+                    for (var j = 0; j < this.groupIds.length; j++) {
+                        for (var i = 0; i < this.allGroups.length; i++) {
+                            if (this.allGroups[i].ID == this.groupIds[j]) {
+                                arr.push(this.allGroups[i]);
+                                this.isShowGroup = true;
+                            }
+                        }
+                    }
+                    return arr;
+                }
+            },
+            created: function () {
+                this.i18ns = getIn18();
+                this.FDIp = getCurrentFD();
+                this.ID = getQueryString('id');
+
+            },
+            mounted: function () {
+                var that = this;
+                setTimeout(function () {
+                    that.getUpgradePlanById();
+                    that.getGroupList();
+                }, 0);
+            },
+            methods: {
+                unitFun: function (Size) {
+                    return unitFun(Size)
+                },
+                getUpgradePlanById: function () {
+                    this.fullscreenLoading = true;
+                    this.emptyText = this.i18ns.common.loading;
+                    var param = {
+                        ip: this.FDIp,
+                        id: this.ID
+                    }
+                    upgradePackageManage.getUpgradePlanById(param, function (ret) {
+                        app.emptyText = app.i18ns.common.noData;
+                        setTimeout(function () {
+                            app.fullscreenLoading = false;
+                        }, intervalTime); //延迟半秒在关闭loading
+                        if (ret.code == '0') {
+                            var data = ret.data[0].data;
+                            app.planInfo = data;
+                            app.groupIds = data.DeviceGroupIDs;
+                            if (data.DeviceGroupIDs !== null && data.DeviceGroupIDs !== undefined) {
+                                app.taskStatu = data.DeviceGroupIDs.length > 0;
+                            }
+                            if (data.VersionType == 'UpgradePackage') {
+                                app.versionList = data.Packages;
+                            } else {
+                                if (data.BaselineInfo.FirmwarePackages) {
+                                    var firmwarePackages = [];
+                                    _.each(data.BaselineInfo.FirmwarePackages, function (
+                                        baselineEle) {
+                                        if (_.filter(baselineEle.Version, {
+                                                Selected: true
+                                            }).length > 0) {
+                                            firmwarePackages.push({
+                                                ProductType: baselineEle
+                                                    .SupportModel,
+                                                PackageName: baselineEle
+                                                    .PackageName,
+                                                ReleaseNotes: baselineEle
+                                                    .ReleaseNotes,
+                                                Size: baselineEle.Size,
+                                                Source: baselineEle.Source,
+                                                SupportModel: baselineEle
+                                                    .SupportModel,
+                                                Version: baselineEle.Version
+                                            })
+                                        }
+                                    });
+                                    app.versionList = firmwarePackages;
+                                }
+                            }
+                            if (data.TaskFlow) {
+                                var batchDevice = [];
+                                _.each(data.TaskFlow, function (item) {
+                                    var obj = {
+                                        timeDelay: item.BatchInterval > 0 ? item.BatchInterval /60 : 0,
+                                        list: []
+                                    }
+                                    if (item.Devices && item.Devices.length > 0) {
+                                        app.deviceList = _.concat(app.deviceList,item.Devices)
+                                        obj.list = _.concat(obj.list,item.Devices);
+                                    }
+                                    if (item.GroupDeviceInfos.length > 0) {
+                                        app.groupDevices = _.concat(app.groupDevices,item.GroupDeviceInfos)
+                                        obj.list = _.concat(obj.list,item.GroupDeviceInfos);
+                                    }
+                                    batchDevice.push(obj);
+                                })
+                                app.isShowDevices = app.deviceList.length > 0;
+                                if (!app.taskStatu) {
+                                    app.taskStatu = app.isShowGroup || app.isShowDevices;
+                                }
+                                if (batchDevice.length > 1) {
+                                    app.batchDevice.splice(0)
+                                    app.batchDevice = batchDevice;
+                                    app.upgradeSwitch = true;
+                                    app.allDeviceNum = _.uniq(_.concat(app.groupDevices, app.deviceList)).length;
+                                } else {
+                                    app.batchDevice = [{
+                                        list: _.uniq(_.concat(app.groupDevices, app.deviceList))
+                                    }];
+                                }
+                            }
+                        }
+                    })
+                },
+
+                /**
+                 * 获取升级计划状态
+                 */
+                getStatusTxt: function (data) {
+                    switch (data) {
+                        case 'Disable':
+                            return this.i18ns.upgradePlan.upgradePlan_notStart;
+                        case 'Enable':
+                            return this.i18ns.upgradePlan.upgradePlan_alreadyStart;
+                        case 'Close':
+                            return this.i18ns.upgradePlan.upgradePlan_alreadyFinish;
+                        default:
+                            return "";
+                    }
+                },
+
+                /**
+                 * 获取执行策略
+                 */
+                getExecutionPolicyTxt: function (data) {
+                    switch (data) {
+                        case 'Immediate':
+                            return this.i18ns.upgradePlan.upgradePlan_immediateExecution;
+                        case 'Period':
+                            return this.i18ns.upgradePlan.upgradePlan_cycleCheck;
+                        case 'SpecifiedTime':
+                            return this.planInfo.SpecifiedTime + this.i18ns.upgradePlan
+                                .upgradePlan_startUpgrade;
+                        default:
+                            return "";
+                    }
+                },
+
+                /**
+                 * 获取生效策略
+                 */
+                getEffectStatusTxt: function (data) {
+                    switch (data) {
+                        case false:
+                            return this.i18ns.upgradePlan.upgradePlan_effectiveLater;
+                        case true:
+                            return this.i18ns.upgradePlan.upgradePlan_immediateEffect;
+                        default:
+                            return "";
+                    }
+                },
+                /**
+                 * 获取组的列表
+                 */
+                getGroupList: function () {
+                    upgradePackageManage.getAllGRoupList({
+                        ip: this.FDIp
+                    }, function (ret) {
+                        if (ret.code == '0') {
+                            app.allGroups = ret.data[0].data.Groups;
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                        }
+                    })
+                },
+
+                /**
+                 * 获取单个组详情
+                 */
+                showGroupDetil: function (name) {
+                    this.groupItemTit = name;
+                    this.groupDialog = true;
+                    this.emptyText = this.i18ns.common.loading;
+                    upgradePackageManage.getGroupItemDetail({
+                        ip: this.FDIp,
+                        name: name,
+                        pageNo: 1,
+                        pageSize: 10
+                    }, function (ret) {
+                        app.emptyText = app.i18ns.common.noData;
+                        if (ret.code == '0') {
+                            app.groupItem = ret.data[0].data.Members
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                        }
+                    })
+                },
+
+                /**
+                 *  返回按钮方法 
+                 * **/
+                back: function () {
+                    window.location.href = './index.html?s=' + Math.random();
+                },
+                /**
+                 * 设备中所属组
+                 */
+                getGroupTxt: function (group) {
+                    if (group) {
+                        if (typeof group == 'string') {
+                            return group
+                        } else if (Array.isArray(group)) {
+                            return group.join(',')
+                        } else {
+                            return '--'
+                        }
+                    } else {
+                        return '--'
+                    }
+                },
+                detailsDeviceInfo: function (row) {
+                    if(row.ProductType=='E9000'){
+                        this.serverData = [];
+                        this.managerData = [];
+                        this.switchData = [];
+                        this.fanData = [];
+                        if(row.Devices&&row.Devices.length>0){
+                            app.serverData=_.filter(row.Devices,function(item){
+                                return item.DeviceType == 'Server'
+                            });
+                            app.managerData = _.filter(row.Devices,function(item){
+                                return item.DeviceType == 'Manager'
+                            });
+                            app.switchData = _.filter(row.Devices,function(item){
+                                return item.DeviceType == 'Switch'
+                            });
+                            app.fanData = _.filter(row.Devices,function(item){
+                                return item.DeviceType != 'Server'&&item.DeviceType != 'Manager'&&item.DeviceType != 'Switch'
+                            });
+                        }
+                        this.deviceTit = row.HostName;
+                        this.preciseDetailDialog=true;
+                    }else{
+                        this.deviceInfo = row.ModulesInfo;
+                        this.deviceItemTit = row.BMCIP;
+                        this.$refs.deviceInfoDialog.show();
+                    }
+                },
+                /**
+                 * 获取设备的固件详情
+                 */
+                detailsInfo: function (row) {
+                    var queryParam = {
+                        DeviceID: "",
+                        VersionType: ""
+                    }
+                    if (row.IPv4Address) {
+                        this.deviceItemTit = row.IPv4Address.Address;
+                        queryParam.DeviceID = row.DeviceID;
+                    } else if (row.BMCIP) {
+                        this.deviceItemTit = row.BMCIP;
+                        queryParam.DeviceID = row.ID;
+                    }
+                    if (this.planInfo.VersionType == 'Baseline') {
+                        queryParam.VersionType = 'Baseline';
+                        queryParam.BaselineInfo = {
+                            BaselineID: this.planInfo.BaselineInfo.UUID,
+                            FirmwarePackages: []
+                        };
+                        var arr = []
+                        for (var i = 0; i < this.versionList.length; i++) {
+                            var obj = {
+                                PackageName: this.versionList[i].PackageName,
+                                Module: []
+                            }
+                            for (var k = 0; k < this.versionList[i].Version.length; k++) {
+                                obj.Module.push(this.versionList[i].Version[k].Module)
+                            }
+                            arr.push(obj)
+                        }
+                        queryParam.BaselineInfo.FirmwarePackages = arr;
+                    } else {
+                        queryParam.VersionType = 'UpgradePackage';
+                        queryParam.PackageInfos = [];
+                        for (var i = 0; i < this.versionList.length; i++) {
+                            var obj = {
+                                PackageID: this.versionList[i].ID,
+                                Module: []
+                            }
+                            for (var k = 0; k < this.versionList[i].Version.length; k++) {
+                                obj.Module.push(this.versionList[i].Version[k].Module)
+                            }
+                            queryParam.PackageInfos.push(obj)
+                        }
+                    }
+                    upgradePackageManage.getDetailsInfo({
+                        ip: this.FDIp,
+                        data: queryParam
+                    }, function (ret) {
+                        if (ret.code == '0') {
+                            app.deviceInfo = ret.data[0].data.ModulesInfo;
+                            app.$refs.deviceInfoDialog.show();
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                        }
+                    })
+                },
+                /**
+                 * 精准升级弹窗--切换
+                 */
+                 handleClick:function(){
+                    var ref='';
+                    if(this.activeDetail=='Server'){
+                        ref= 'serverData'
+                        app.$refs['managerData'].hideFirmwares()
+                        app.$refs['switchData'].hideFirmwares()
+                        app.$refs['fanData'].hideFirmwares()
+                    }else if(this.activeDetail=='Manager'){
+                        ref= 'managerData'
+                        app.$refs['serverData'].hideFirmwares()
+                        app.$refs['switchData'].hideFirmwares()
+                        app.$refs['fanData'].hideFirmwares()
+                    }else if(this.activeDetail=='Switch'){
+                        ref= 'switchData'
+                        app.$refs['managerData'].hideFirmwares()
+                        app.$refs['serverData'].hideFirmwares()
+                        app.$refs['fanData'].hideFirmwares()
+                    }else if(this.activeDetail=='Fan'){
+                        ref= 'fanData'
+                        app.$refs['managerData'].hideFirmwares()
+                        app.$refs['switchData'].hideFirmwares()
+                        app.$refs['serverData'].hideFirmwares()
+                    }
+                    app.$refs[ref].handleClick()
+                },
+
+            }
+        });
+    </script>
+</body>
+
+</html>

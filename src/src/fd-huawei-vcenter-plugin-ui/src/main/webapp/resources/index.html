@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title></title>
+    <meta charset="utf-8" />
+    <link href="css/element.css" rel="stylesheet" />
+    <link href="css/style.css" rel="stylesheet" />
+    <script src="scripts/vue.js"></script>
+    <script src="scripts/element.js"></script>
+    <script src="scripts/i18n/zh-CN.js"></script>
+    <script src="scripts/i18n/en.js"></script>
+    <script src="../assets/jquery-2.1.3.min.js"></script>
+    <script src="./js/web-platform.js"></script>
+    <script src="./huawei/i18n/V-zh-CN.js"></script>
+    <script src="./huawei/i18n/V-en.js"></script>
+    <script>
+        var curPath = window.document.location.href;
+        var here = curPath.substring(0, curPath.lastIndexOf("/") + 1);
+
+        $("script").each(function () {
+            var src = $(this).attr("src");
+            if (src != undefined) {
+                $(this).attr("src", here + src);
+            }
+        });
+
+        $("link").each(function () {
+            var href = $(this).attr("href");
+            if (href != undefined) {
+                $(this).attr("href", here + href);
+            }
+        });
+    </script>
+
+    <style type="text/css">
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="mainapp" v-cloak>
+        <el-menu theme="dark" :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+            <el-submenu index="1">
+                <template slot="title"><a id="menu-setting">{{i18ns.menu_setting}}</a></template>
+                <el-menu-item id="menu-setting" index="huawei/setting/index.html">{{i18ns.menu_vCenter}}</el-menu-item>
+                <el-menu-item id="menu-eSight" index="huawei/FDConfig/index.html">{{i18ns.menu_FD}}</el-menu-item>
+            </el-submenu>
+            <el-menu-item id="menu-server-list" index="huawei/server/list.html">{{i18ns.menu_server_list}}
+            </el-menu-item>
+            <el-menu-item id="menu-config-list" index="huawei/configuration/index.html">{{i18ns.menu_profile}}
+            </el-menu-item>
+            <el-submenu index="4">
+                <template slot="title"><a id="menu-deploy">{{i18ns.menu_deployment}}</a></template>
+                <el-menu-item id="menu-osImage" index="huawei/osImage/index.html">{{i18ns.menu_osImage}}
+                </el-menu-item>
+                <el-menu-item id="menu-osDeploy" index="huawei/osDeploy/index.html">{{i18ns.menu_osDeploy}}
+                </el-menu-item>
+            </el-submenu>
+            <el-submenu index="6">
+                <template slot="title"><a id="menu-upgrade">{{i18ns.menu_upgrade}}</a></template>
+                <el-menu-item id="menu_versionWarehouse" index="huawei/upgradePackageWarehouse/index.html">{{i18ns.menu_versionWarehouse}}
+                </el-menu-item>
+                <el-menu-item id="menu_upgradePlan" index="huawei/upgradePlan/index.html">{{i18ns.menu_upgradePlan}}
+                </el-menu-item>
+                <el-menu-item id="menu_DeviceVersionInfo" index="huawei/deviceVersionStatus/index.html">{{i18ns.menu_DeviceVersionInfo}}
+                </el-menu-item>
+            </el-submenu>
+            <el-menu-item id="menu-task" index="huawei/task/index.html">{{i18ns.menu_task}}</el-menu-item>
+            <!--  <el-submenu index="3"> -->
+            <!--    <template slot="title"><a id="menu-vcenter">{{i18ns.menu_vCenter_set}}</a></template> -->
+            <!--   <el-menu-item id="menu-vCenter-ha" index="huawei/vCenter/vCenterConfig.html">{{i18ns.menu_vCenter_set}}</el-menu-item> -->
+            <!--  </el-submenu> -->
+            <el-menu-item style="float: right;" index="huawei/about/about.html">
+                {{i18ns.menu_about}}
+            </el-menu-item>
+        </el-menu>
+        <iframe width="100%" id="mainViewIframe" v-bind:height="iframeHeight" frameborder="0" v-bind:src="iframeSrc"
+            scrolling="yes"></iframe>
+    </div>
+
+    <script>
+        var app = new Vue({
+            el: "#mainapp",
+            data: {
+                activeIndex: '',
+                i18ns: {}, //国际化
+                iframeSrc: '',
+                iframeHeight: 400
+            },
+            created: function () {
+                var currentLang = navigator.language; //判断除IE外其他浏览器使用语言 
+                if (!currentLang) {
+                    //判断IE浏览器使用语言
+                    currentLang = navigator.browserLanguage;
+                }
+                if (currentLang == 'zh-CN') {
+                    //表示中文
+                    localStorage.setItem('lang', 'zhCN');
+                } else {
+                    //英文
+                    localStorage.setItem('lang', 'en');
+                }
+                this.i18ns = getVCenterIn18();
+                setTimeout(function () {
+                    /* app.getSetting(); */
+                }, 0);
+                var fdListUrl = com_huawei_fdvcenterpluginui.webContextPath +
+                    "/rest/services/fd/version?s=" + Math.random();
+                //通过API获取数据
+                $.ajax({
+                    type: 'GET',
+                    contentType: 'application/json;charset=utf-8',
+                    url: fdListUrl,
+                    dataType: "json",
+                    async: "false",
+                    success: function (data, textStatus, jqXHR) {
+                        app.getSetting();
+                        if (data.supportHA !== undefined && data.supportHA !== null &&
+                            data.supportHA !== '') {
+                            localStorage.setItem('supportHA', data.supportHA);
+                        }
+                        console.log(jqXHR.getAllResponseHeaders());
+                        var acceptLanguage = jqXHR.getResponseHeader("Accept-Language");
+                        if (acceptLanguage) {
+                            acceptLanguage = acceptLanguage.slice(0, 2);
+                        } else {
+                            acceptLanguage = 'en';
+                        }
+                        if (acceptLanguage == 'zh') {
+                            localStorage.setItem('lang', 'zhCN');
+                        } else {
+                            localStorage.setItem('lang', 'en');
+                        }
+                        app.i18ns = getVCenterIn18();
+                        /*    app.activeIndex = "huawei/server/list.html";
+                           app.iframeSrc = here + "huawei/server/list.html"; */
+
+                    }
+                });
+            },
+            methods: {
+                handleSelect: function (key, keyPath) {
+                    activeIndex = key;
+                    this.iframeSrc = here + key + "?" + Math.random();
+                },
+                getSetting: function (callback) {
+                    var url = com_huawei_fdvcenterpluginui.webContextPath + "/rest/services/settings?s=" + Math.random();
+                    $.get(url, function (response) {
+                        if (response.data == null) {
+                            app.activeIndex = "huawei/setting/index.html";
+                            app.iframeSrc = here + "huawei/setting/index.html";
+                        } else {
+                            $.get(com_huawei_fdvcenterpluginui.webContextPath +
+                                "/rest/services/fd?pageNo=-1&pageSize=-1&s=" + Math.random(),
+                                function (res) {
+                                    if (res.code === '0') {
+                                        var lg = res.data.length;
+                                        if (lg > 0) {
+                                            app.activeIndex = "huawei/server/list.html";
+                                            app.iframeSrc = here + "huawei/server/list.html";
+                                        } else {
+                                            app.activeIndex = "huawei/FDConfig/index.html";
+                                            app.iframeSrc = here + "huawei/FDConfig/index.html";
+                                        }
+                                    } else {
+                                        app.activeIndex = "huawei/FDConfig/index.html";
+                                        app.iframeSrc = here + "huawei/FDConfig/index.html";
+                                    }
+                                }, "json");
+                        }
+                    }, "json");
+                },
+            }
+        })
+
+        function doResize() {
+            var explorer = navigator.userAgent;
+            if (explorer.indexOf("Firefox") >= 0 || explorer.indexOf("Windows") >= 0) {
+                app.iframeHeight = $(window).height() - 80;
+            } else {
+                app.iframeHeight = document.body.scrollHeight - 80;
+            }
+        }
+
+        $(document).ready(function () {
+            doResize();
+            $(window).resize(function () {
+                doResize();
+            });
+        });
+
+        function _refresh() {
+            var fdListUrl = com_huawei_fdvcenterpluginui.webContextPath + "/rest/services/fd/version?s=" + Math.random();
+            //通过API获取数据
+            $.get(fdListUrl, function (response) {
+                console.log(response);
+            }, "json");
+        }
+        var timer = window.setInterval(_refresh, 1 * 60 * 1000);
+
+        /**
+         * vCenter菜单国际化
+         **/
+        function getVCenterIn18() {
+            var lang = localStorage.getItem('lang');
+            if (lang) {
+                if (lang == 'zhCN') {
+                    ELEMENT.locale(ELEMENT.lang.zhCN);
+                    return i18n_v_zh_CN;
+                } else {
+                    ELEMENT.locale(ELEMENT.lang.en);
+                    return i18n_v_en;
+                }
+            } else {
+                ELEMENT.locale(ELEMENT.lang.en);
+                return i18n_v_en;
+            }
+        }
+    </script>
+
+</body>
+
+</html>

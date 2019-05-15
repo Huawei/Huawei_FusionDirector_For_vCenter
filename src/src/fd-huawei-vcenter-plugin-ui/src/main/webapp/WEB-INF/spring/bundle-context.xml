@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:osgi="http://www.springframework.org/schema/osgi"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:aop="http://www.springframework.org/schema/aop"
+  xmlns:mvc="http://www.springframework.org/schema/mvc"
+  xmlns:context="http://www.springframework.org/schema/context"
+  xsi:schemaLocation="
+      http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://www.springframework.org/schema/osgi
+      http://www.springframework.org/schema/osgi/spring-osgi.xsd
+      http://www.springframework.org/schema/mvc
+      http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+      http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context-3.0.xsd
+      http://www.springframework.org/schema/aop
+      http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+  <!-- DO NOT CHANGE this section, it enables Spring MVC @Controller programming model -->
+
+  <mvc:annotation-driven/>
+  <context:annotation-config/>
+
+  <!-- 拦截器 -->
+  <mvc:interceptors>
+    <mvc:interceptor>
+      <!-- 匹配的是url路径， 如果不配置或/**,将拦截所有的Controller -->
+      <mvc:mapping path="/**"/>
+      <!-- 拦截器类 -->
+      <bean class="com.huawei.fdvcenterpluginui.interceptor.SessionHandlerInterceptor">
+      </bean>
+    </mvc:interceptor>
+    <!-- 当设置多个拦截器时，先按顺序调用preHandle方法，然后逆序调用每个拦截器的postHandle和afterCompletion方法 -->
+  </mvc:interceptors>
+
+  <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+    <!--<property name="mediaTypes">-->
+    <!--<map>-->
+    <!--<entry key="json" value="application/json"/>-->
+    <!--</map>-->
+    <!--</property>-->
+    <!--<property name="defaultViews">-->
+    <!--<list>-->
+    <!--&lt;!&ndash; This is required to render the controller responses as Json &ndash;&gt;-->
+    <!--<bean class="org.springframework.web.servlet.view.json.MappingJacksonJsonView" />-->
+    <!--</list>-->
+    <!--</property>-->
+  </bean>
+
+
+  <!-- Standard controller beans: you can modify them if necessary -->
+
+  <bean name="fdController" class="com.huawei.fdvcenterpluginui.mvc.FDController"/>
+
+  <bean name="fdSettingController" class="com.huawei.fdvcenterpluginui.mvc.FDSettingController"/>
+
+  <!-- File upload -->
+  <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+    <property name="maxUploadSize" value="16106127360" /> <!-- 15G -->
+    <property name="maxInMemorySize" value="4096" />
+  </bean>
+
+  <!-- AOP -->
+  <bean name="aspectBean" class="com.huawei.fdvcenterpluginui.services.LogAspect"/>
+
+  <!-- OSGI references to platform services used by the controllers -->
+
+  <!-- OSGI references to your services used by the controllers -->
+
+  <osgi:reference id="sessionService"
+    interface="com.huawei.fdvcenterpluginui.services.SessionService"/>
+
+  <osgi:reference id="instantiationBeanService"
+    interface="com.huawei.fdvcenterpluginui.services.InstantiationBeanService"/>
+
+  <osgi:reference id="fdHostService"
+    interface="com.huawei.fdvcenterpluginui.services.FDHostService"/>
+
+  <osgi:reference id="fdSettingService"
+    interface="com.huawei.fdvcenterpluginui.services.FDSettingService"/>
+
+  <osgi:reference id="fdAlarmService"
+    interface="com.huawei.fdvcenterpluginui.services.FDAlarmService"/>
+
+  <osgi:reference id="fdSyncService"
+    interface="com.huawei.fdvcenterpluginui.services.FDSyncService"/>
+
+  <aop:config proxy-target-class="false">
+    <aop:aspect ref="aspectBean">
+      <aop:pointcut id="controllerPointcut"
+        expression="execution(public * com.huawei.fdvcenterpluginui.mvc.*Controller.*(..))"/>
+      <aop:before pointcut-ref="controllerPointcut" method="logRequest"/>
+      <!--<aop:afterreturning pointcut-ref="controllerPointcut" method="logFailureResult"/>-->
+      <aop:after-returning pointcut-ref="controllerPointcut" method="logFailureResult" returning="result"/>
+      <aop:after-throwing pointcut-ref="controllerPointcut" method="logException"/>
+    </aop:aspect>
+  </aop:config>
+</beans>
+

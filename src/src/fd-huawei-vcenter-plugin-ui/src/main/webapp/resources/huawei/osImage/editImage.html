@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>修改镜像</title>
+    <link href="../../css/element.css" rel="stylesheet" />
+    <link href="../../css/style.css" rel="stylesheet" />
+    <script src="../../scripts/vue.js"></script>
+    <script src="../../scripts/element.js"></script>
+    <script src="../../scripts/jquery-3.2.1.min.js"></script>
+    <script src="../../scripts/i18n/zh-CN.js"></script>
+    <script src="../../scripts/i18n/en.js"></script>
+    <script src="../i18n/en.js"></script>
+    <script src="../i18n/zh-CN.js"></script>
+    <script src="../../scripts/polyfill.min.js"></script>
+    <script src="../js/common.js"></script>
+    <script src="../../scripts/web-platform.js"></script>
+    <script src="../js/errorCode.js"></script>
+    <script src="../../scripts/lodash.min.js"></script>
+    <script src="../../scripts/Chart.bundle.min.js"></script>
+    <script src="js/rest.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        body {
+            min-width: 900px;
+        }
+
+        .deployContent {
+            padding: 20px;
+        }
+
+        .optionGroup {
+            float: right;
+            position: relative;
+        }
+
+        .infoTitle {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .deployinfo {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .deployinfo tr td {
+            height: 30px;
+            padding-left: 5px;
+        }
+
+        .dashBorder {
+            width: 100%;
+            height: 1px;
+            border-bottom: #dddddd 1px dashed;
+            margin-bottom: 25px;
+            margin-top: 25px;
+        }
+
+        .el-select {
+            width: 100%;
+        }
+        .el-select .el-input.is-disabled .el-input__inner{
+            height: 30px!important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <el-row v-loading.fullscreen.lock="fullscreenLoading " :element-loading-text="i18ns.common.loading">
+            <div class="deployContent">
+                <div>
+                    <el-row>
+                        <el-form label-position="left" :model="creatForm" :rules="rules" ref="creatForm"
+                            label-width="150px">
+                            <el-col :span="13">
+                                <el-form-item label="Fusion Director：" prop="FDIp">
+                                    <el-select v-model="FDIp" @change="commandClick" disabled>
+                                        <el-option v-for="item in FDs" :key="item.name" :label="item.label"
+                                            :value="item.name"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="13">
+                                <el-form-item :label="i18ns.imageManage.imageManage_imageFilleTypeColon"
+                                    prop="FileType">
+                                    <el-select v-model="creatForm.FileType" disabled>
+                                        <el-option v-for="item in FileType" :key="item" :label="item" :value="item">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="13">
+                                <el-form-item :label="i18ns.imageManage.imageManage_fileNameColon" prop="Name">
+                                    <el-input :placeholder="i18ns.OSDeploy.pleaseEnter" v-model="creatForm.Name"
+                                        class="input-with-select"></el-input>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="13">
+                                <el-form-item :label="i18ns.imageManage.imageManage_imageFileDescriptionColon"
+                                    prop="Description">
+                                    <el-input :rows="3" type="textarea" v-model="creatForm.Description" maxlength="256"
+                                        :placeholder="i18ns.OSDeploy.deploy_descriptionLimit"></el-input>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="13">
+                                <el-form-item :label="i18ns.imageManage.imageManage_imageTypeColon" prop="OsType">
+                                    <el-select v-model="creatForm.OsType" @change="changeOsType" :disabled="IsUsed">
+                                        <el-option v-for="item in OsType" :key="item" :label="item" :value="item">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="13">
+                                <el-form-item :label="i18ns.imageManage.imageManage_imageVersionColon" prop="OsVersion">
+                                    <el-select v-model="creatForm.OsVersion" :disabled="IsUsed">
+                                        <el-option v-for="item in OsVersion" :key="item.Version" :label="item.Version"
+                                            :value="item.Version"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-form>
+                    </el-row>
+                </div>
+            </div>
+        </el-row>
+        <el-row>
+            <!-- 返回按钮 -->
+            <el-button style="margin-top:10px;" @click="back">{{i18ns.common.cancel}}</el-button>
+            <el-button style="margin-top:10px;" type="primary" @click="creatImage">{{i18ns.common.submit}}</el-button>
+        </el-row>
+    </div>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                i18ns: [],
+                FDs: [],
+                FDIp: '',
+                imageId: '',
+                loading: false,
+                fullscreenLoading: false,
+                creatForm: {
+                    Name: '',
+                    Description: '',
+                    FileType: '',
+                    OsVersion: '',
+                    OsType: '',
+                    // CheckType:'',
+                    // CheckCode:''
+                },
+                // isRules:false,
+                rules: {
+                    Description: {
+                        required: false,
+                        validator: function (rule, value, callback) {
+                            if (value) {
+                                if (getBytes(value) > 256) {
+                                    return callback(new Error(app.i18ns.OSDeploy.deploy_descriptionLimit));
+                                } else
+                                    return callback();
+                            } else {
+                                return callback();
+                            }
+                        },
+                        trigger: 'change'
+                    },
+                    FileType: [{
+                        required: true,
+                        trigger: 'blur'
+                    }],
+                    OsType: [{
+                        required: true,
+                        trigger: 'blur'
+                    }],
+                    OsVersion: [{
+                        required: true,
+                        trigger: 'blur'
+                    }],
+                    ImagePath: [{
+                        required: true,
+                        trigger: 'blur'
+                    }],
+                    CheckType: [{
+                        required: true,
+                        trigger: 'blur'
+                    }],
+                    CheckCode: [{
+                        required: true,
+                        trigger: 'blur'
+                    }],
+                    Name: {
+                        required: true,
+                        validator: function (rule, value, callback) {
+                            if (value) {
+                                if (getBytes(value) > 32) {
+                                    return callback(new Error(app.i18ns.common.regExp_userName));
+                                } else if (!/^[a-zA-Z0-9_\-.\u4e00-\u9fa5]+$/.test(value)) {
+                                    return callback(new Error(app.i18ns.common.regExp_userName));
+                                } else
+                                    return callback();
+                            } else {
+                                return callback(new Error(app.i18ns.common.regExp_userName));
+                            }
+                        },
+                        trigger: 'change'
+                    },
+                },
+                FileType: [],
+                OsType: [],
+                OsVersion: [],
+                CheckType: ['sha256', 'md5'],
+
+                IsUsed:false
+
+            },
+            computed: {},
+            created: function () {
+                this.i18ns = getIn18();
+                this.imageId = getQueryString('id');
+            },
+            mounted: function () {
+                var that = this;
+                //获取FD列表数据
+                setTimeout(function () {
+                    getFDList(that.bindFD);
+                }, 0);
+            },
+            methods: {
+                /**
+                 * 获取FD数据 回调函数
+                 * 
+                 * @param {any} ret 
+                 */
+                bindFD: function (ret) {
+                    if (ret.code === '0') {
+                        var lg = ret.data.length;
+                        if (lg > 0) {
+                            for (var i = 0; i <
+                                lg; i++) {
+                                if (ret.data[i].aliasName) {
+                                    this.FDs.push({
+                                        label: ret.data[i].aliasName,
+                                        name: ret.data[i].hostIp
+                                    });
+                                } else {
+                                    this.FDs.push({
+                                        label: ret.data[i].hostIp,
+                                        name: ret.data[i].hostIp
+                                    });
+                                }
+                            }
+                            var currentFD = getCurrentFD();
+                            if (currentFD) {
+                                var _currentFD = _.find(this.FDs, {
+                                    name: currentFD
+                                })
+                                if (_currentFD) {
+                                    this.FDIp = currentFD;
+                                } else {
+                                    setCurrentFD(ret.data[0].hostIp);
+                                    this.FDIp = ret.data[0].hostIp;
+                                }
+                            } else {
+                                setCurrentFD(ret.data[0].hostIp);
+                                this.FDIp = ret.data[0].hostIp;
+                            }
+                            this.loading = true;
+                            this.getImageInfo();
+                        } else {
+                            alertMsg(getErrorMsg({
+                                code: '-90002'
+                            }));
+                        }
+                    } else {
+                        if (ret.ip != app.FDIp) {
+                            return false
+                        }
+                        var msg = getErrorMsg(ret);
+                        alertMsg(msg);
+                    }
+                },
+
+                /**
+                 * FD下拉框 点击切换事件
+                 * 
+                 * @param {any} command 
+                 * @param {any} com 
+                 */
+                commandClick: function () {
+                    setCurrentFD(this.FDIp);
+                    this.getEnums();
+                },
+
+                /**
+                 *  取消按钮方法 
+                 * **/
+                back: function () {
+                    this.$confirm('<span><strong>' + app.i18ns.common.routeSkipTip +
+                        '</strong></span></br><span>' + app.i18ns
+                        .common
+                        .routeSkipWarningTip + '</span>', app.i18ns.common.prompt, {
+                            confirmButtonText: app.i18ns.common.yes,
+                            cancelButtonText: app.i18ns.common.no,
+                            type: 'warning',
+                            dangerouslyUseHTMLString: true,
+                            closeOnClickModal: false
+                        }).then(function () {
+                        window.location.href = '../osImage/index.html?s=' + Math.random();
+                    }).catch(function () {});
+                },
+
+                /**
+                 * 获取镜像的详情
+                 */
+                getImageInfo: function () {
+                    var param = {
+                        ip: this.FDIp,
+                        id: this.imageId
+                    };
+                    osImageManage.getImageInfo(param, function (ret) {
+                        setTimeout(function () {
+                            app.fullscreenLoading = false;
+                        }, intervalTime); //延迟关闭loading
+                        if (ret.code == '0') {
+                            app.creatForm = {
+                                Name: ret.data[0].data.Name,
+                                Description: ret.data[0].data.Description,
+                                FileType: ret.data[0].data.FileType,
+                                OsVersion: ret.data[0].data.OsVersion,
+                                OsType: ret.data[0].data.OsType,
+                            }
+                            app.IsUsed = ret.data[0].data.IsUsed;
+                            app.getEnums();
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                            /*  alertMsg(getErrorMsg({
+                                 code: 'os.10007'
+                             })); */
+                        }
+                    })
+                },
+
+                /**
+                 * 获取os枚举值
+                 */
+                getEnums: function () {
+                    var param = {
+                        ip: this.FDIp
+                    };
+                    osImageManage.getImageEnums(param, function (ret) {
+                        app.fullscreenLoading = false;
+                        if (ret.code == '0') {
+                            app.FileType = ret.data[0].data.Result.FileType;
+                            ret.data[0].data.Result.OsType = ret.data[0].data.Result.OsType.filter(
+                                function (x) {
+                                    return x == 'VMware';
+                                });
+                            app.OsType = ret.data[0].data.Result.OsType;
+                            app.getSubType();
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                            /* alertMsg(getErrorMsg({
+                                code: 'os.10006'
+                            })); */
+                        }
+                    })
+                },
+                /**
+                 * 获取镜像的版本号
+                 */
+                getSubType: function () {
+                    var param = {
+                        ip: this.FDIp,
+                        data: {
+                            OsType: this.creatForm.OsType
+                        }
+                    };
+                    osImageManage.getSubType(param, function (ret) {
+                        if (ret.code == '0') {
+                            app.OsVersion = ret.data[0].data.Result.SubType;
+                            //app.creatForm.OsVersion = ret.data[0].data.Result.SubType[0].Version;
+                        } else {
+                            if (ret.ip != app.FDIp) {
+                                return false
+                            }
+                            var msg = getErrorMsg(ret);
+                            alertMsg(msg);
+                            /*  alertMsg(getErrorMsg({
+                                 code: 'os.10005'
+                             })); */
+                        }
+                    })
+                },
+
+                /**
+                 * 更改镜像类型
+                 */
+                changeOsType: function () {
+                    this.getSubType();
+                },
+
+                /**
+                 * 提交编辑镜像
+                 */
+                creatImage: function () {
+                    this.$refs['creatForm'].validate(function (valid) {
+                        if (valid) {
+                            // var data = _.assign(this.creatForm,this.$refs.deployModelInfo.deployForm);
+                            var param = {
+                                ip: app.FDIp,
+                                id: app.imageId,
+                                data: app.creatForm
+                            };
+                            app.fullscreenLoading = true;
+                            osImageManage.editImageInfo(param, function (ret) {
+                                app.fullscreenLoading = false;
+                                if (ret.code == '0') {
+                                    window.location.href = '../osImage/index.html?s=' +
+                                        Math.random();
+                                } else {
+                                    if (ret.ip != app.FDIp) {
+                                        return false
+                                    }
+                                    var msg = getErrorMsg(ret);
+                                    alertMsg(msg);
+                                    /*  alertMsg(getErrorMsg({
+                                         code: 'os.10002'
+                                     })); */
+                                }
+                            })
+                        } else {
+                            console.log('error submit!!');
+                            return false;
+                        }
+                    });
+
+                }
+
+            }
+        });
+    </script>
+</body>
+
+</html>
