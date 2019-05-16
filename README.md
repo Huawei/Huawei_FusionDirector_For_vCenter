@@ -26,8 +26,9 @@ IV.Software Requirements
 
 V. Supported Device
 
-    Huawei Blade Server:        E9000
-    Huawei Rack Server:         RH2288H V2,RH1288 V3,RH2288 V3,RH2288H V3,RH5885 V3,RH8100 V3,1288H V5,2288H V5,2488 V5
+    Huawei Blade Server:        CH121 V5,CH242 V5,CH121 V3,CH242 V3
+    Huawei Rack Server:         1288H V5, 2288H V5, 2488 V5,2488H V5,8100 V5,RH2288H V3
+    Chassis：                   E9000 (MM920)
     
     For more details about compatible with Huawei Server,Please refer to the Server Devices sheet of excel document of FusionDirector
 
