@@ -8,7 +8,6 @@ I. General Information
 
     Name:     Huawei_FusionDirector_For_vCenter plugin
     Category: Monitoring and Configuration
-    version : 1.0.210
     
 II. Description
 
@@ -16,13 +15,12 @@ II. Description
 
 III. Supported Software Version
 
-    vCenter Server 6.0U2a or later for Linux 
     vCenter Server 6.5/6.7 for Linux
-    vCenter Server 6.0/6.5/6.7 for Windows  
+    vCenter Server 6.5/6.7 for Windows  
     
 IV.Software Requirements
 
-    FusionDirecton 1.5.0
+    FusionDirecton 1.5.2、1.6.1
 
 V. Supported Device
 
@@ -35,7 +33,4 @@ V. Supported Device
 VI. Additional Resources
 
     For more information consult User Guide: https://github.com/Huawei/Huawei_FusionDirector_For_vCenter/tree/master/docs
-
-VII. Open Source Software Notice
-    
-    https://github.com/Huawei/Huawei_FusionDirector_For_vCenter/blob/master/docs/Open_Source_Software_Notice.doc
+	
